@@ -82,4 +82,3 @@ def draw_body(x, y):
         arc.draw_line(line[0], line[1], line[2], line[3], arc.csscolor.BLACK)
 
 start()
-
