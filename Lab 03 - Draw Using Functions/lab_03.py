@@ -3,26 +3,21 @@ import arcade as arc
 def on_draw(delta_time):  # draws everything
     global beach_ball_x, beach_ball_y, beach_ball_dx, beach_ball_dy
     arc.start_render()
-    #  IF STATIONARY:
-    #   x1 and y1 are for head, x2 and y2 are for the body,
-    #  not sure why I didn't make it all part of the same thing...
-    #  y2 should be 20 less than y1
-    #  x1 and x2 should be the same
+
     arc.draw_lrtb_rectangle_filled(0, 799, 375, 0, arc.csscolor.SANDY_BROWN)  # draw sand
 
     arc.draw_lrtb_rectangle_filled(0, 799, 550, 375, arc.csscolor.DARK_BLUE)  # draw ocean
 
     draw_beach_ball(beach_ball_x, beach_ball_y)  # draws an orange beach ball
 
-    beach_ball_x += beach_ball_dx  # these next few lines make the ball move
+    # These next few lines make the ball move left, right, up, and down
+    beach_ball_x += beach_ball_dx
     if beach_ball_x >= 560 or beach_ball_x <= 520:
         beach_ball_dx *= -1
 
     beach_ball_y += beach_ball_dy
     if beach_ball_y >= 570 or beach_ball_y <= 550:
         beach_ball_dy *= -1
-
-
 
     draw_person(400, 400, 400, 380)  # left main dude
     draw_person(300, 400, 300, 380)  # right main dude
