@@ -149,4 +149,4 @@ while not done:
     elif user_choice.lower() == "e":
         stat_check()
     else:
-        print("Bro I'm a dumb computer idk what that means.\n")
+        print("Bro I'm a dumb computer idk what", user_choice, "means.")
