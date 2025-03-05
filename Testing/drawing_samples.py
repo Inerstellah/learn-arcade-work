@@ -1,27 +1,16 @@
-"""
-This code is a test run from chapter 5
-We are going to be drawing woohoo!
-We have to import more code. Check out line 6
-"""
-import arcade
+import time
 
-arcade.open_window(600, 600, "Drawing Cool Stuff")
+trainer_Name = input("Welcome, Trainer! What is your name? ")
 
-# setting background color
-arcade.set_background_color(arcade.csscolor.SKY_BLUE)
+print("Okay, nice to meet you", trainer_Name + "!\n")
 
-# getting ready to draw
-arcade.start_render()
+time.sleep(1.2)
 
-arcade.draw_lrbt_rectangle_filled(0, 599, 0 , 300, arcade.csscolor.GREEN)
-arcade.draw_lrbt_rectangle_filled(90, 110, 280, 340, arcade.csscolor.SIENNA)
-arcade.draw_circle_filled(100, 350, 30, arcade.csscolor.DARK_GREEN)
-arcade.draw_lrbt_rectangle_filled(190, 210, 280, 340, arcade.csscolor.SIENNA)
-arcade.draw_ellipse_filled(200, 370, 60, 80, arcade.csscolor.DARK_GREEN)
+print(trainer_Name + ", you are about to embark on an epic quest of friendship, betrayals, "
+                    "happiness, and sadness.")
 
+time.sleep(2.5)
 
-# finishing up drawing
-arcade.finish_render()
+print("""Let me back up... You are now part of a magic world with creatures that we call "Animons" """)
 
-# the line below this one keeps the window open so it doesn't insta-close
-arcade.run()
+time.sleep(3)
