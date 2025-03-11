@@ -55,7 +55,6 @@ def done_running():  #  goes off whenever the user runs,
         print("You are too thirsty to keep running.")
     elif rest < 11:
         print("You are too tired to keep running.")
-    print("You have finished running.")
 
 
 def done_drinking():
@@ -108,6 +107,7 @@ def done_eating():
           "To rest, enter S\n"
           "To quit the game, enter Q\n")
 
+
 def stat_check():
     print("You have", food, " food.")
     print("You have", water, " water.")
@@ -126,25 +126,25 @@ while not done:
         done_running()
         if yards_from_mom < 1:
             print("Mom caught up to you! You lose! You ran a total of ", total_yards_ran,
-              "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
+                  "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
             break
     elif user_choice.lower() == "w":
         done_drinking()
         if yards_from_mom < 1:
             print("Mom caught up to you! You lose! You ran a total of ", total_yards_ran,
-              "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
+                  "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
             break
     elif user_choice.lower() == "f":
         done_eating()
         if yards_from_mom < 1:
             print("Mom caught up to you! You lose! You ran a total of ", total_yards_ran,
-              "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
+                  "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
             break
     elif user_choice.lower() == "s":
         done_resting()
         if yards_from_mom < 1:
             print("Mom caught up to you! You lose! You ran a total of ", total_yards_ran,
-              "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
+                  "yards, or ", round(total_yards_ran * 3 / 5280, 3), "miles.")
             break
     elif user_choice.lower() == "e":
         stat_check()
