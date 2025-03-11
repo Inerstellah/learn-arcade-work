@@ -176,7 +176,7 @@ north to the South Hall instead. (Type "s" to leave, or "n")""", 0, None, 8, Non
             print("ggs")
             break
         else:
-            print("Bro I'm a dumb computer idk what this", answer, "nonsense is!\n")
+            print("Bro I'm a dumb computer idk what this", answer, "nonsense is.\n")
 
 
 main()
