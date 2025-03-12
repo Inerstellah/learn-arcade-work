@@ -1,3 +1,6 @@
+import arcade
+
+
 class Room:
     def __init__(self, description, north, east, south, west):
         self.description = description  # only part that is a string
@@ -6,8 +9,21 @@ class Room:
         self.south = south  # room number that is to the south
         self.west = west  # room number that is to the west
 
+item_list = []
 
-def main():
+def item1():
+     item_list.append("flashlight")
+
+
+def chips():
+    item_list.append("bag of salt and vinegar chips")
+
+
+def candy_bar():
+    item_list.append("milky way")
+
+
+def main():  # literally runs the entire game
     room_list = []  # temporary empty list that all the rooms go in to.
 
     # South Hall (0)
@@ -15,7 +31,6 @@ def main():
                 "to the west, the bathroom\nto the east, the North Hall"
                 " to the north, and the exit to the south.",
                 4, 3, 2, 1)
-
     room_list.append(room)
 
     # Bedroom (1)
@@ -82,8 +97,8 @@ north to the South Hall instead. (Type "s" to leave, or "n")""", 0, None, 8, Non
     room_list.append(room)
 
     # Gas station entrance (11)
-    room = Room("You walked to the gas station and realize you're a bit hungry. Do you wanna "
-                "pick up chips or a candy bar?\n(n for chips, e for candy bar)", 13, 14, None, None)
+    room = Room("You walked to the gas station and realize you're a bit hungry.",
+                13, 14, None, None)
 
     room_list.append(room)
 
@@ -103,14 +118,40 @@ north to the South Hall instead. (Type "s" to leave, or "n")""", 0, None, 8, Non
     room = Room("You picked up a candy bar. It was $1.39. Time to go! "
                     "(go east)", None, 8, None, None)
 
-    current_room = 0  # 0 is the south hall
+    current_room = 0  # 0 is the south hall btw
 
-    done = False  # makes game not insta-end
+    has_flashlight = False
 
-    while not done:
+    while True:
         print(room_list[current_room].description)
         print()
-        answer = input("What direction do you wanna go? Or q to quit. ")
+        if current_room == 1 and not has_flashlight:
+            answer = input("There's a flashlight on the bed. "
+                           "Do you want to pick it up? (yes/no) ")
+            if answer.lower() == "yes":
+                item1()  # Call the function that adds the flashlight to the inventory
+                has_flashlight = "flashlight" in item_list  # Update flashlight status
+            else:
+                print("You left the flashlight alone.")
+            print(room_list[current_room].description)
+            print()
+        if current_room == 11:
+            answer = input("Do you wanna pick up some chips or a candy bar? ")
+            print()
+            if answer.lower() == "chips":
+                print("You picked up a bag of chips for $1.59\n")
+                item_list.append("bag of salt and vinegar chips")
+            elif answer.lower() == "candy" or answer.lower() == "candy bar":
+                print("You picked up a milky way for $1.19\n")
+                item_list.append("milky way")
+            else:
+                print("You didn't buy anything. Leaving the gas station.\n")
+            current_room = 8
+            print(room_list[current_room].description)
+            print()
+        answer = input("What direction do you wanna go? Or q to quit. You can also type "
+                       "i to check your inventory. ")
+        print()
         if answer.lower() == "n" or answer.lower() == "north":  # if user says north
             next_room = room_list[current_room].north
             if next_room is None:
@@ -135,6 +176,37 @@ north to the South Hall instead. (Type "s" to leave, or "n")""", 0, None, 8, Non
                 print("Homie you can't go that way :skull:")
             else:
                 current_room = next_room
+        elif answer.lower() == "i":
+            if len(item_list) == 0:
+                print("You don't have anything in your inventory.\n")
+            else:
+                print(item_list)
+                print()
+        elif answer.lower() == "map":
+            arcade.open_window(600, 600, "Map")
+            arcade.set_background_color(arcade.csscolor.SKY_BLUE)
+            arcade.start_render()
+            for i in range(3):  # draws bedroom, south hall, and bathroom
+                arcade.draw_lrtb_rectangle_outline(225 + 50 * i, 275 + 50 * i, 325, 275,
+                                                   arcade.csscolor.BLACK, 3)
+            arcade.draw_text("Bedroom", 225, 290, arcade.csscolor.BLACK, 8, bold=True)
+            arcade.draw_text("South", 288, 294, arcade.csscolor.BLACK, 8, bold=True)
+            arcade.draw_text("Hall", 288, 284, arcade.csscolor.BLACK, 8, bold=True)
+            for i in range (4):  # draw porch, north hall, south hall (repeat), and exit
+                arcade.draw_lrtb_rectangle_outline(275, 325, 275 + 50 * i, 225 + 50 * i,
+                                                   arcade.csscolor.BLACK, 3)
+            arcade.draw_lrtb_rectangle_outline(325, 375, 375, 325,
+                                               arcade.csscolor.BLACK, 3)  # draws living room
+            arcade.draw_lrtb_rectangle_outline(225, 275, 375, 350,
+                                               arcade.csscolor.BLACK, 3)  # draws kitchen
+            for i in range(3):  # draws gas station, outside, and friend's house
+                arcade.draw_lrtb_rectangle_outline(150 + 125 * i, 200 + 125 * i, 150, 100,
+                                                   arcade.csscolor.BLACK, 3)
+            for i in range(2):
+                arcade.draw_lrtb_rectangle_outline(275 + 125 * i, 325 + 125 * i, 75, 25,
+                                                   arcade.csscolor.BLACK, 3)
+            arcade.finish_render()
+            arcade.run()
         elif answer.lower() == "q" or answer.lower() == "quit":
             print("ggs")
             break
