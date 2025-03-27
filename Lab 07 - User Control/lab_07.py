@@ -71,7 +71,7 @@ class MyGame(arcade.Window):
         self.beach_ball_y += self.beach_ball_dy
         if self.beach_ball_y >= 570 or self.beach_ball_y <= 550:
             self.beach_ball_dy *= -1
-        # draw a bunch of people
+        # draw people
         self.draw_person(400, 400, 400, 380)
         self.draw_person(300, 400, 300, 380)
         self.draw_person(500, 500, 500, 480)
