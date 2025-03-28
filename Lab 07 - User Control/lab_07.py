@@ -2,7 +2,7 @@ import arcade
 
 # --- Constants ---
 SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_HEIGHT = 800
 SPRITE_SCALING_CRAB = 0.05
 SPRITE_SCALING_SEASHELL = 0.05
 MOVEMENT_SPEED = 3
@@ -37,7 +37,7 @@ class MyGame(arcade.Window):
 
         # Call the parent class initializer
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Lab 7 - User Control")
-        self.crab = Crab(100, 100, 0, 0)
+        self.crab = Crab(180, 180, 0, 0)
         self.seashell = Seashell(200, 200)
         self.beach_ball_x = 520
         self.beach_ball_y = 550
@@ -54,6 +54,7 @@ class MyGame(arcade.Window):
     def on_draw(self):
         """ Draw everything here """
         arcade.start_render()
+        arcade.set_background_color(arcade.csscolor.SKY_BLUE)
 
         # Draw the background
         arcade.draw_lrtb_rectangle_filled(0, 799, 375, 0, arcade.csscolor.SANDY_BROWN)
@@ -70,7 +71,7 @@ class MyGame(arcade.Window):
         self.beach_ball_y += self.beach_ball_dy
         if self.beach_ball_y >= 570 or self.beach_ball_y <= 550:
             self.beach_ball_dy *= -1
-
+        # draw the people
         self.draw_person(400, 400, 400, 380)
         self.draw_person(300, 400, 300, 380)
         self.draw_person(500, 500, 500, 480)
@@ -91,6 +92,8 @@ class MyGame(arcade.Window):
         self.crab.player_list.draw()
         self.seashell.player_list.draw()
 
+        arcade.draw_text("Press Space to close", 250, 30, arcade.color.BLACK, 12)
+
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.W and self.crab.y < SCREEN_HEIGHT:
@@ -101,6 +104,8 @@ class MyGame(arcade.Window):
             self.crab.dx = -MOVEMENT_SPEED
         if key == arcade.key.D and self.crab.y > 25:
             self.crab.dx = MOVEMENT_SPEED
+        if key == arcade.key.SPACE:
+            arcade.close_window()
 
 
     def on_key_release(self, key, modifiers):
@@ -188,7 +193,7 @@ class MyGame(arcade.Window):
 
 
 def main():
-    """ Main function """
+
     window = MyGame()
     arcade.run()
 
