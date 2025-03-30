@@ -143,7 +143,7 @@ class MyGame(arcade.Window):
 
         # Generate a list of all sprites that collided with the player.
         seashells_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
-                                                              self.seashell_list)
+                                                                  self.seashell_list)
         rocks_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
                                                               self.rock_list)
         cats_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
@@ -192,6 +192,7 @@ def main():
     window = MyGame()
     window.setup()
     arcade.run()
+
 
 if __name__ == "__main__":
     main()
