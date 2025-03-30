@@ -117,7 +117,7 @@ class MyGame(arcade.Window):
         arcade.draw_text(output, 10, 20, arcade.color.WHITE, 14)
 
         if len(self.seashell_list) < 1:
-            arcade.draw_text("You collected all the seashells! Game over!",
+            arcade.draw_text("You collected all the seashells! Game over.",
                              115, 300, arcade.color.BLACK, 22)
             arcade.draw_text("You also collected " + str(CATS_HIT) + " of 3 cats!",
                              205, 250, arcade.color.BLACK, 22)
