@@ -36,7 +36,7 @@ class MyGame(arcade.Window):
         """ Initializer """
 
         # Call the parent class initializer
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Lab 7 - User Control")
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "User Control")
         self.crab = Crab(180, 180, 0, 0)
         self.seashell = Seashell(200, 200)
         self.beach_ball_x = 520
