@@ -15,7 +15,8 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
 MOVEMENT_SPEED = 5
-
+JERRY_MOVEMENT_SPEED = 8
+# Jerry is very quick
 
 class MyGame(arcade.Window):
     """ This class represents the main window of the game. """
@@ -34,6 +35,9 @@ class MyGame(arcade.Window):
         # Set up the player
         self.player_sprite = None
 
+        # Set up Jerry
+        self.jerry_sprite = arcade.Sprite("jerry.png", JERRY_SCALING)
+
         # This variable holds our simple "physics engine"
         self.physics_engine = None
 
@@ -41,6 +45,8 @@ class MyGame(arcade.Window):
         # We scroll the 'sprite world' but not the GUI.
         self.camera_for_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.camera_for_gui = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        self.squeak = arcade.load_sound("squeak.mp3")
 
     class Gem:
         def __init__(self, x, y):
@@ -81,7 +87,7 @@ class MyGame(arcade.Window):
         for x in range(64, 640, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
-            wall.center_y = 200
+            wall.center_y = 192
             if not wall.center_x % 192 == 0:
                 self.wall_list.append(wall)
 
@@ -89,7 +95,7 @@ class MyGame(arcade.Window):
         for x in range(64, 640, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
-            wall.center_y = 350
+            wall.center_y = 384
             if not wall.center_x % 192 == 0:
                 self.wall_list.append(wall)
 
@@ -97,7 +103,7 @@ class MyGame(arcade.Window):
         for x in range(64, 640, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
-            wall.center_y = 500
+            wall.center_y = 576
             if not wall.center_x % 192 == 0:
                 self.wall_list.append(wall)
 
@@ -121,6 +127,59 @@ class MyGame(arcade.Window):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = -64
+            self.wall_list.append(wall)
+
+        # Build a great wall
+        for y in range(-64, 768, 64):
+            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall.center_x = 832
+            wall.center_y = y
+            self.wall_list.append(wall)
+
+        # And another
+        for x in range(0, 896, 64):
+            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall.center_x = x
+            wall.center_y = 768
+            self.wall_list.append(wall)
+
+        # Now draw an arrow that points to the easter egg
+        for x in range(960, 1334, 64):
+            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall.center_x = x
+            wall.center_y = -512
+            self.wall_list.append(wall)
+
+        # Manually place the diagonals cause I'm lazy
+        coordinate_list = [(1216, -448),
+                           (1152, -384),
+                           (1216, -576),
+                           (1152, -640)]
+
+        for coordinate in coordinate_list:
+            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall.center_x = coordinate[0]
+            wall.center_y = coordinate[1]
+            self.wall_list.append(wall)
+
+        # Then make another arrow
+        for y in range(-576, -192, 64):
+            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall.center_x = 2880
+            wall.center_y = y
+            self.wall_list.append(wall)
+
+        # Using specific coordinates again yay!
+        coordinate_list_2 = [(2816, -320),
+                             (2752, -384),
+                             (2944, -320),
+                             (3008, -384)]
+
+        # Then actually use the coords (again)
+        for coordinate in coordinate_list_2:
+            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall.center_x = coordinate[0]
+            wall.center_y = coordinate[1]
             self.wall_list.append(wall)
 
         # Create the physics engine. Give it a reference to the player, and
@@ -234,12 +293,19 @@ class MyGame(arcade.Window):
         gems_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
                                                               self.gem_list)
 
+        jerry_players_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.jerry_list)
+
         for gem in gems_hit_list:
             gem.remove_from_sprite_lists()
             self.score += 1
 
+        for jerry in jerry_players_hit_list:
+            jerry.remove_from_sprite_lists()
+            self.score += 2
+            arcade.play_sound(self.squeak)
+
     def on_key_press(self, key, modifiers):
-        """Called whenever a key is pressed. """
+        """ Called whenever a key is pressed. """
 
         if key == arcade.key.W:
             self.player_sprite.change_y = MOVEMENT_SPEED
