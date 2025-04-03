@@ -9,6 +9,7 @@ SPRITE_SCALING_PLAYER = 0.15
 GEM_SCALING = 0.4
 JERRY_SCALING = 0.1
 GEM_COUNT = 15
+JERRY_COUNT = 10
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -65,6 +66,7 @@ class MyGame(arcade.Window):
         self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
         self.gem_list = arcade.SpriteList()
+        self.jerry_list = arcade.SpriteList()
 
         # Reset the score
         self.score = 0
@@ -130,8 +132,6 @@ class MyGame(arcade.Window):
             # Create the gem objects
             gem = arcade.Sprite("real-rock.png", GEM_SCALING)
 
-
-
             # Boolean variable if we successfully placed the gem
             gem_placed_successfully = False
 
@@ -157,10 +157,43 @@ class MyGame(arcade.Window):
             # Add the gem to the list
             self.gem_list.append(gem)
 
+        # Make a special gem far to the right
         gem = arcade.Sprite("real-rock.png", 3)
         gem.center_x = 3100
         gem.center_y = 300
         self.gem_list.append(gem)
+
+        # Now draw some mice, because Sidney wanted mice
+        for i in range(JERRY_COUNT):
+            # Create the jerrys
+            jerry = arcade.Sprite("jerry.png", JERRY_SCALING)
+            # Track if a jerry has been placed successfully
+            jerry_placed_successfully = False
+
+            # Keep trying for all jerrys
+            while not jerry_placed_successfully:
+                jerry.center_x = random.randrange(SCREEN_WIDTH)
+                jerry.center_y = random.randrange(SCREEN_HEIGHT)
+
+                # See if jerry is hitting a wall
+                jerryto_wall_hit_list = arcade.check_for_collision_with_list(jerry, self.wall_list)
+
+                # See if jerry is hitting another jerry
+                jerryto_jerry_hit_list = arcade.check_for_collision_with_list(jerry, self.jerry_list)
+
+                # See if jerry is hitting the player
+                jerry_hits_list = arcade.check_for_collision_with_list(jerry, self.player_list)
+
+                # See if jerry is hitting a gem
+                jerryto_gem_hit_list = arcade.check_for_collision_with_list(jerry, self.gem_list)
+
+                if (len(jerryto_wall_hit_list) == 0 and len(jerryto_jerry_hit_list) == 0 and
+                        len(jerry_hits_list) == 0 and len(jerryto_gem_hit_list) == 0):
+                    # It is!
+                    jerry_placed_successfully = True
+
+                # Add jerry the list
+            self.jerry_list.append(jerry)
 
     def on_draw(self):
         arcade.start_render()
@@ -172,6 +205,7 @@ class MyGame(arcade.Window):
         self.wall_list.draw()
         self.player_list.draw()
         self.gem_list.draw()
+        self.jerry_list.draw()
 
         # Select the (unscrolled) camera for our GUI
         self.camera_for_gui.use()
