@@ -30,6 +30,7 @@ class MyGame(arcade.Window):
         self.player_list = None
         self.wall_list = None
         self.gem_list = None
+        self.special_gem_list = None
         self.jerry_list = None
 
         # Set up the player
@@ -47,6 +48,8 @@ class MyGame(arcade.Window):
         self.camera_for_gui = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         self.squeak = arcade.load_sound("squeak.mp3")
+        self.aah = arcade.load_sound("aah.wav")
+        self.aaaah = arcade.load_sound("aaaah.wav")
 
     class Gem:
         def __init__(self, x, y):
@@ -73,6 +76,7 @@ class MyGame(arcade.Window):
         self.wall_list = arcade.SpriteList()
         self.gem_list = arcade.SpriteList()
         self.jerry_list = arcade.SpriteList()
+        self.special_gem_list = arcade.SpriteList()
 
         # Reset the score
         self.score = 0
@@ -145,7 +149,7 @@ class MyGame(arcade.Window):
 
         # Now draw an arrow that points to the easter egg
         for x in range(960, 1334, 64):
-            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = -512
             self.wall_list.append(wall)
@@ -157,14 +161,14 @@ class MyGame(arcade.Window):
                            (1152, -640)]
 
         for coordinate in coordinate_list:
-            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
             wall.center_x = coordinate[0]
             wall.center_y = coordinate[1]
             self.wall_list.append(wall)
 
         # Then make another arrow
         for y in range(-576, -192, 64):
-            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
             wall.center_x = 2880
             wall.center_y = y
             self.wall_list.append(wall)
@@ -177,7 +181,7 @@ class MyGame(arcade.Window):
 
         # Then actually use the coords (again)
         for coordinate in coordinate_list_2:
-            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+            wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
             wall.center_x = coordinate[0]
             wall.center_y = coordinate[1]
             self.wall_list.append(wall)
@@ -220,7 +224,7 @@ class MyGame(arcade.Window):
         gem = arcade.Sprite("real-rock.png", 3)
         gem.center_x = 3100
         gem.center_y = 300
-        self.gem_list.append(gem)
+        self.special_gem_list.append(gem)
 
         # Now draw some mice, because Sidney wanted mice
         for i in range(JERRY_COUNT):
@@ -263,6 +267,7 @@ class MyGame(arcade.Window):
         self.wall_list.draw()
         self.player_list.draw()
         self.gem_list.draw()
+        self.special_gem_list.draw()
         self.jerry_list.draw()
 
         # Select the (unscrolled) camera for our GUI
@@ -272,6 +277,7 @@ class MyGame(arcade.Window):
                          730, 30, arcade.color.WHITE, 14)
         arcade.draw_text("Y: " + str(round(self.player_sprite.center_y)),
                          730, 10, arcade.color.WHITE, 14)
+        arcade.draw_text("Hit R to restart", 320, 10, arcade.color.WHITE, 22)
 
     def on_update(self, delta_time):
         """ Movement and game logic """
@@ -285,7 +291,7 @@ class MyGame(arcade.Window):
         # If CAMERA_SPEED is 1, the camera will immediately move to the desired position.
         # Anything between 0 and 1 will have the camera move to the location with a smoother
         # pan.
-        CAMERA_SPEED = 0.15
+        CAMERA_SPEED = 0.5
         lower_left_corner = (self.player_sprite.center_x - self.width / 2,
                              self.player_sprite.center_y - self.height / 2)
         self.camera_for_sprites.move_to(lower_left_corner, CAMERA_SPEED)
@@ -295,26 +301,50 @@ class MyGame(arcade.Window):
 
         jerry_players_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.jerry_list)
 
+        special_gem_hit_list = arcade.check_for_collision_with_list(self.player_sprite, self.special_gem_list)
+
         for gem in gems_hit_list:
             gem.remove_from_sprite_lists()
             self.score += 1
+            arcade.play_sound(self.aah)
 
         for jerry in jerry_players_hit_list:
             jerry.remove_from_sprite_lists()
             self.score += 2
             arcade.play_sound(self.squeak)
 
+        for special_gem in special_gem_hit_list:
+            special_gem.remove_from_sprite_lists()
+            self.score += 5
+            arcade.play_sound(self.aaaah)
+
     def on_key_press(self, key, modifiers):
         """ Called whenever a key is pressed. """
 
         if key == arcade.key.W:
-            self.player_sprite.change_y = MOVEMENT_SPEED
+            if self.score >= 35:
+                self.player_sprite.change_y = MOVEMENT_SPEED * 2
+            else:
+                self.player_sprite.change_y = MOVEMENT_SPEED
         elif key == arcade.key.S:
-            self.player_sprite.change_y = -MOVEMENT_SPEED
+            if self.score >= 35:
+                self.player_sprite.change_y = -MOVEMENT_SPEED * 2
+            else:
+                self.player_sprite.change_y = -MOVEMENT_SPEED
         elif key == arcade.key.A:
-            self.player_sprite.change_x = -MOVEMENT_SPEED
+            if self.score >= 35:
+                self.player_sprite.change_x = -MOVEMENT_SPEED * 2
+            else:
+                self.player_sprite.change_x = -MOVEMENT_SPEED
         elif key == arcade.key.D:
-            self.player_sprite.change_x = MOVEMENT_SPEED
+            if self.score >= 35:
+                self.player_sprite.change_x = MOVEMENT_SPEED * 2
+            else:
+                self.player_sprite.change_x = MOVEMENT_SPEED
+        elif key == arcade.key.SPACE:
+            arcade.close_window()
+        elif key == arcade.key.R:
+            self.setup()
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
