@@ -66,6 +66,14 @@ class MyGame(arcade.Window):
             self.jerry_sprite.center_x = self.x
             self.jerry_sprite.center_y = self.y
 
+    class Key:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+            self.key_sprite = "It literally doesn't matter cause it gets set when it's created"
+            self.key_sprite.center_x = self.x
+            self.key_sprite.center_y = self.y
+
     def setup(self):
 
         # Set the background color
