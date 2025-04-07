@@ -49,6 +49,7 @@ class MyGame(arcade.Window):
 
         self.squeak = arcade.load_sound("squeak.mp3")
         self.aah = arcade.load_sound("aah.wav")
+        self.aaaah = arcade.load_sound("aaaah.wav")
 
     class Gem:
         def __init__(self, x, y):
@@ -75,6 +76,7 @@ class MyGame(arcade.Window):
         self.wall_list = arcade.SpriteList()
         self.gem_list = arcade.SpriteList()
         self.jerry_list = arcade.SpriteList()
+        self.special_gem_list = arcade.SpriteList()
 
         # Reset the score
         self.score = 0
@@ -125,7 +127,7 @@ class MyGame(arcade.Window):
             self.wall_list.append(wall)
 
         # Yeah, world barriers are probably necessary...
-        for x in range (0, 768, 64):
+        for x in range (0, 1024, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = -64
@@ -134,12 +136,12 @@ class MyGame(arcade.Window):
         # Build a great wall
         for y in range(-64, 768, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
-            wall.center_x = 832
+            wall.center_x = 1088
             wall.center_y = y
             self.wall_list.append(wall)
 
         # And another
-        for x in range(0, 896, 64):
+        for x in range(0, 1152, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = 768
@@ -184,6 +186,14 @@ class MyGame(arcade.Window):
             wall.center_y = coordinate[1]
             self.wall_list.append(wall)
 
+        # One more set of walls teehee
+        for i in range(3):
+            for y in range(64, 864, 160):
+                wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
+                wall.center_x = i * 64 + 768
+                wall.center_y = y
+                self.wall_list.append(wall)
+
         # Create the physics engine. Give it a reference to the player, and
         # the walls we can't run into.
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
@@ -199,8 +209,8 @@ class MyGame(arcade.Window):
             # Keep trying until success
             while not gem_placed_successfully:
                 # Position the gem
-                gem.center_x = random.randrange(SCREEN_WIDTH)
-                gem.center_y = random.randrange(SCREEN_HEIGHT)
+                gem.center_x = random.randrange(SCREEN_WIDTH + 200)
+                gem.center_y = random.randrange(SCREEN_HEIGHT + 80)
 
                 # See if the gem is hitting a wall
                 wall_hit_list = arcade.check_for_collision_with_list(gem, self.wall_list)
@@ -222,7 +232,7 @@ class MyGame(arcade.Window):
         gem = arcade.Sprite("real-rock.png", 3)
         gem.center_x = 3100
         gem.center_y = 300
-        self.special.gem_list.append(gem)
+        self.special_gem_list.append(gem)
 
         # Now draw some mice, because Sidney wanted mice
         for i in range(JERRY_COUNT):
@@ -233,8 +243,8 @@ class MyGame(arcade.Window):
 
             while not jerry_placed_successfully:
                 # Position jerry
-                jerry.center_x = random.randrange(SCREEN_WIDTH)
-                jerry.center_y = random.randrange(SCREEN_HEIGHT)
+                jerry.center_x = random.randrange(SCREEN_WIDTH + 200)
+                jerry.center_y = random.randrange(SCREEN_HEIGHT + 80)
 
                 # Check if jerry is hitting a wall
                 jerry_wall_hit_list = arcade.check_for_collision_with_list(jerry, self.wall_list)
@@ -275,6 +285,7 @@ class MyGame(arcade.Window):
                          730, 30, arcade.color.WHITE, 14)
         arcade.draw_text("Y: " + str(round(self.player_sprite.center_y)),
                          730, 10, arcade.color.WHITE, 14)
+        arcade.draw_text("Hit R to restart", 320, 10, arcade.color.WHITE, 22)
 
     def on_update(self, delta_time):
         """ Movement and game logic """
@@ -338,6 +349,10 @@ class MyGame(arcade.Window):
                 self.player_sprite.change_x = MOVEMENT_SPEED * 2
             else:
                 self.player_sprite.change_x = MOVEMENT_SPEED
+        elif key == arcade.key.SPACE:
+            arcade.close_window()
+        elif key == arcade.key.R:
+            self.setup()
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
