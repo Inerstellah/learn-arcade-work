@@ -127,7 +127,7 @@ class MyGame(arcade.Window):
             self.wall_list.append(wall)
 
         # Yeah, world barriers are probably necessary...
-        for x in range (0, 768, 64):
+        for x in range (0, 1024, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = -64
@@ -136,12 +136,12 @@ class MyGame(arcade.Window):
         # Build a great wall
         for y in range(-64, 768, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
-            wall.center_x = 832
+            wall.center_x = 1088
             wall.center_y = y
             self.wall_list.append(wall)
 
         # And another
-        for x in range(0, 896, 64):
+        for x in range(0, 1152, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = 768
@@ -186,6 +186,14 @@ class MyGame(arcade.Window):
             wall.center_y = coordinate[1]
             self.wall_list.append(wall)
 
+        # One more set of walls teehee
+        for i in range(3):
+            for y in range(64, 864, 160):
+                wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
+                wall.center_x = i * 64 + 768
+                wall.center_y = y
+                self.wall_list.append(wall)
+
         # Create the physics engine. Give it a reference to the player, and
         # the walls we can't run into.
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
@@ -201,8 +209,8 @@ class MyGame(arcade.Window):
             # Keep trying until success
             while not gem_placed_successfully:
                 # Position the gem
-                gem.center_x = random.randrange(SCREEN_WIDTH)
-                gem.center_y = random.randrange(SCREEN_HEIGHT)
+                gem.center_x = random.randrange(SCREEN_WIDTH + 200)
+                gem.center_y = random.randrange(SCREEN_HEIGHT + 80)
 
                 # See if the gem is hitting a wall
                 wall_hit_list = arcade.check_for_collision_with_list(gem, self.wall_list)
@@ -235,8 +243,8 @@ class MyGame(arcade.Window):
 
             while not jerry_placed_successfully:
                 # Position jerry
-                jerry.center_x = random.randrange(SCREEN_WIDTH)
-                jerry.center_y = random.randrange(SCREEN_HEIGHT)
+                jerry.center_x = random.randrange(SCREEN_WIDTH + 200)
+                jerry.center_y = random.randrange(SCREEN_HEIGHT + 80)
 
                 # Check if jerry is hitting a wall
                 jerry_wall_hit_list = arcade.check_for_collision_with_list(jerry, self.wall_list)
