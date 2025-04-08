@@ -36,6 +36,10 @@ class MyGame(arcade.Window):
 
         arcade.set_background_color(arcade.csscolor.NAVY)
 
+        self.ahh_sound = arcade.load_sound("aah.wav")
+        self.coin_sound = arcade.load_sound("coin1.wav")
+        self.meow_sound = arcade.load_sound("meow.wav")
+
     class Seashell:
         def __init__(self, x):
             self.x = x
@@ -171,16 +175,19 @@ class MyGame(arcade.Window):
             for seashell in seashells_hit_list:
                 seashell.remove_from_sprite_lists()
                 self.score += 1
+                arcade.play_sound(self.coin_sound)
 
             for rock in rocks_hit_list:
                 rock.remove_from_sprite_lists()
                 self.score -= 1
+                arcade.play_sound(self.ahh_sound)
 
             for cat in cats_hit_list:
                 cat.remove_from_sprite_lists()
                 self.score += 5
                 global CATS_HIT
                 CATS_HIT += 1
+                arcade.play_sound(self.meow_sound)
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.SPACE:
