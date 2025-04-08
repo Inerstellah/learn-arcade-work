@@ -1,5 +1,5 @@
 """ Sprite Sample Program """
-# Check line 409
+
 import arcade
 import random
 
@@ -17,8 +17,7 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
 MOVEMENT_SPEED = 5
-JERRY_MOVEMENT_SPEED = 8
-# Jerry is very quick
+
 
 class MyGame(arcade.Window):
     """ This class represents the main window of the game. """
@@ -31,6 +30,11 @@ class MyGame(arcade.Window):
         # Sprite lists
         self.player_list = None
         self.wall_list = None
+        self.green_wall_list = None
+        self.red_wall_list = None
+        self.green_wall_list = None
+        self.blue_wall_list = None
+        self.yellow_wall_list = None
         self.gem_list = None
         self.special_gem_list = None
         self.jerry_list = None
@@ -40,6 +44,7 @@ class MyGame(arcade.Window):
         self.yellow_key_list = None
         self.collected_keys_list = None
 
+
         # Set up the player
         self.player_sprite = None
 
@@ -48,6 +53,7 @@ class MyGame(arcade.Window):
 
         # This variable holds our simple "physics engine"
         self.physics_engine = None
+        self.physics_engine_2 = None
 
         # Create the cameras. One for the GUI, one for the sprites.
         # We scroll the 'sprite world' but not the GUI.
@@ -104,6 +110,11 @@ class MyGame(arcade.Window):
         self.green_key_list = arcade.SpriteList()
         self.yellow_key_list = arcade.SpriteList()
         self.collected_keys_list = arcade.SpriteList()
+        self.blue_wall_list = arcade.SpriteList()
+        self.red_wall_list = arcade.SpriteList()
+        self.green_wall_list = arcade.SpriteList()
+        self.yellow_wall_list = arcade.SpriteList()
+        self.green_wall_list = arcade.SpriteList()
 
 
         # Reset the score
@@ -208,11 +219,67 @@ class MyGame(arcade.Window):
                     wall.center_y = y
                     self.wall_list.append(wall)
 
+        # Now draw all the colored walls
+        # Green walls:
+        for i in range(2):
+            for y in range(0, 960, 64):
+                green_wall = arcade.Sprite("greenBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                green_wall.center_x = 2560 + i * 960
+                green_wall.center_y = y
+                self.green_wall_list.append(green_wall)
+        for i in range(2):
+            for x in range(2624, 3520, 64):
+                green_wall = arcade.Sprite("greenBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                green_wall.center_x = x
+                green_wall.center_y = i * 896
+                self.green_wall_list.append(green_wall)
+
+        # Blue walls:
+        for i in range(2):
+            for y in range(64, 896, 64):
+                blue_wall = arcade.Sprite("blueBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                blue_wall.center_x = 2624 + i * 832
+                blue_wall.center_y = y
+                self.blue_wall_list.append(blue_wall)
+        for i in range(2):
+            for x in range(2688, 3456, 64):
+                blue_wall = arcade.Sprite("blueBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                blue_wall.center_x = x
+                blue_wall.center_y = 64 + i * 768
+                self.blue_wall_list.append(blue_wall)
+
+        # Red walls
+        for i in range(2):
+            for y in range(128, 832, 64):
+                red_wall = arcade.Sprite("redBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                red_wall.center_x = 2688 + i * 704
+                red_wall.center_y = y
+                self.red_wall_list.append(red_wall)
+        for i in range(2):
+            for x in range(2688, 3456, 64):
+                red_wall = arcade.Sprite("redBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                red_wall.center_x = x
+                red_wall.center_y = 128 + i * 640
+                self.red_wall_list.append(red_wall)
+
+        # Yellow walls
+        for i in range(2):
+            for y in range(192, 768, 64):
+                yellow_wall = arcade.Sprite("yellowBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                yellow_wall.center_x = 2752 + i * 576
+                yellow_wall.center_y = y
+                self.yellow_wall_list.append(yellow_wall)
+        for i in range(2):
+            for x in range(2752, 3392, 64):
+                yellow_wall = arcade.Sprite("yellowBoxCrate_double.png", SPRITE_SCALING_BOX * 2)
+                yellow_wall.center_x = x
+                yellow_wall.center_y = 192 + i * 512
+                self.yellow_wall_list.append(yellow_wall)
 
         # Create the physics engine. Give it a reference to the player, and
         # the walls we can't run into.
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-
+        self.physics_engine_2 = arcade.PhysicsEngineSimple(self.player_sprite, self.green_wall_list)
         # Create the gems
         for i in range(GEM_COUNT):
             # Create the gem objects
@@ -315,6 +382,10 @@ class MyGame(arcade.Window):
         self.red_key_list.draw()
         self.green_key_list.draw()
         self.yellow_key_list.draw()
+        self.green_wall_list.draw()
+        self.blue_wall_list.draw()
+        self.red_wall_list.draw()
+        self.yellow_wall_list.draw()
 
         # Select the (unscrolled) camera for our GUI
         self.camera_for_gui.use()
@@ -332,6 +403,7 @@ class MyGame(arcade.Window):
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
         self.physics_engine.update()
+        self.physics_engine_2.update()
 
         # Scroll the window to the player.
         #
@@ -377,6 +449,11 @@ class MyGame(arcade.Window):
         else:
             KEY_TEXT = ""
 
+        # Test for keys to remove walls
+        if self.has_green_key:
+            for green_wall in self.green_wall_list:
+                green_wall.remove_from_sprite_lists()
+
     def on_key_press(self, key, modifiers):
         """ Called whenever a key is pressed. """
 
@@ -405,13 +482,22 @@ class MyGame(arcade.Window):
         elif key == arcade.key.R:
             self.setup()
         elif key == arcade.key.E:
-
-            """ Do what's below for every key """
-
             if arcade.check_for_collision_with_list(self.player_sprite, self.blue_key_list):
                 self.has_blue_key = True
                 for blue_key in self.blue_key_list:
                     blue_key.remove_from_sprite_lists()
+            elif arcade.check_for_collision_with_list(self.player_sprite, self.red_key_list):
+                self.has_red_key = True
+                for red_key in self.red_key_list:
+                    red_key.remove_from_sprite_lists()
+            elif arcade.check_for_collision_with_list(self.player_sprite, self.green_key_list):
+                self.has_green_key = True
+                for green_key in self.green_key_list:
+                    green_key.remove_from_sprite_lists()
+            elif arcade.check_for_collision_with_list(self.player_sprite, self.yellow_key_list):
+                self.has_yellow_key = True
+                for yellow_key in self.yellow_key_list:
+                    yellow_key.remove_from_sprite_lists()
 
     def on_key_release(self, key, modifiers):
         """ Called when the user releases a key. """
