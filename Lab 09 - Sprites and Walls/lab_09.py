@@ -1,5 +1,5 @@
 """ Sprite Sample Program """
-
+# Check line 409
 import arcade
 import random
 
@@ -10,6 +10,8 @@ GEM_SCALING = 0.4
 JERRY_SCALING = 0.013
 GEM_COUNT = 15
 JERRY_COUNT = 10
+KEY_SCALING = 0.4
+KEY_TEXT = ""
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -32,6 +34,11 @@ class MyGame(arcade.Window):
         self.gem_list = None
         self.special_gem_list = None
         self.jerry_list = None
+        self.blue_key_list = None
+        self.red_key_list = None
+        self.green_key_list = None
+        self.yellow_key_list = None
+        self.collected_keys_list = None
 
         # Set up the player
         self.player_sprite = None
@@ -51,6 +58,12 @@ class MyGame(arcade.Window):
         self.aah = arcade.load_sound("aah.wav")
         self.aaaah = arcade.load_sound("aaaah.wav")
 
+        # Booleans to see if player has a key
+        self.has_blue_key = False
+        self.has_red_key = False
+        self.has_green_key = False
+        self.has_yellow_key = False
+
     class Gem:
         def __init__(self, x, y):
             self.x = x
@@ -66,13 +79,14 @@ class MyGame(arcade.Window):
             self.jerry_sprite.center_x = self.x
             self.jerry_sprite.center_y = self.y
 
-    class Key:
+    class BlueKey:
         def __init__(self, x, y):
             self.x = x
             self.y = y
             self.key_sprite = "It literally doesn't matter cause it gets set when it's created"
             self.key_sprite.center_x = self.x
             self.key_sprite.center_y = self.y
+
 
     def setup(self):
 
@@ -85,39 +99,30 @@ class MyGame(arcade.Window):
         self.gem_list = arcade.SpriteList()
         self.jerry_list = arcade.SpriteList()
         self.special_gem_list = arcade.SpriteList()
+        self.blue_key_list = arcade.SpriteList()
+        self.red_key_list = arcade.SpriteList()
+        self.green_key_list = arcade.SpriteList()
+        self.yellow_key_list = arcade.SpriteList()
+        self.collected_keys_list = arcade.SpriteList()
+
 
         # Reset the score
         self.score = 0
 
         # Create the player
         self.player_sprite = arcade.Sprite("CAT.png", SPRITE_SCALING_PLAYER)
-        self.player_sprite.center_x = 50
-        self.player_sprite.center_y = 64
+        self.player_sprite.center_x = 0
+        self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
 
         # Make some walls
-        for x in range(64, 640, 64):
-            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
-            wall.center_x = x
-            wall.center_y = 192
-            if not wall.center_x % 192 == 0:
-                self.wall_list.append(wall)
-
-        # Do it again but at a diff y-coord
-        for x in range(64, 640, 64):
-            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
-            wall.center_x = x
-            wall.center_y = 384
-            if not wall.center_x % 192 == 0:
-                self.wall_list.append(wall)
-
-        # One more time
-        for x in range(64, 640, 64):
-            wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
-            wall.center_x = x
-            wall.center_y = 576
-            if not wall.center_x % 192 == 0:
-                self.wall_list.append(wall)
+        for i in range(3):
+            for x in range(64, 640, 64):
+                wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
+                wall.center_x = x
+                wall.center_y = 192 * i + 64
+                if not wall.center_x % 192 == 0:
+                    self.wall_list.append(wall)
 
         # Okay again but vertically
         for y in range(64, 640, 64):
@@ -127,29 +132,29 @@ class MyGame(arcade.Window):
             if not wall.center_y % 192 == 0:
                 self.wall_list.append(wall)
 
-        # Nvm we need more
+        # Tall wall on the very left
         for y in range(-64, 768, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
-            wall.center_x = 0
+            wall.center_x = -512
             wall.center_y = y
             self.wall_list.append(wall)
 
-        # Yeah, world barriers are probably necessary...
-        for x in range (0, 1024, 64):
+        # Long wall on the very bottom
+        for x in range (-512, 1024, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = -64
             self.wall_list.append(wall)
 
-        # Build a great wall
+        # Build a great wall on the very right
         for y in range(-64, 768, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = 1088
             wall.center_y = y
             self.wall_list.append(wall)
 
-        # And another
-        for x in range(0, 1152, 64):
+        # Long wall on very top
+        for x in range(-512, 1152, 64):
             wall = arcade.Sprite("boxCrate_double.png", SPRITE_SCALING_BOX)
             wall.center_x = x
             wall.center_y = 768
@@ -194,13 +199,15 @@ class MyGame(arcade.Window):
             wall.center_y = coordinate[1]
             self.wall_list.append(wall)
 
-        # One more set of walls teehee
-        for i in range(3):
-            for y in range(64, 864, 160):
-                wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
-                wall.center_x = i * 64 + 768
-                wall.center_y = y
-                self.wall_list.append(wall)
+        # Two more set of walls teehee
+        for i in range(2):
+            for j in range(3):
+                for y in range(64, 864, 160):
+                    wall = arcade.Sprite("brickGrey.png", SPRITE_SCALING_BOX)
+                    wall.center_x = (j * 64 + 768) - i * 1024
+                    wall.center_y = y
+                    self.wall_list.append(wall)
+
 
         # Create the physics engine. Give it a reference to the player, and
         # the walls we can't run into.
@@ -217,7 +224,7 @@ class MyGame(arcade.Window):
             # Keep trying until success
             while not gem_placed_successfully:
                 # Position the gem
-                gem.center_x = random.randrange(SCREEN_WIDTH + 200)
+                gem.center_x = random.randrange(-500, SCREEN_WIDTH + 200)
                 gem.center_y = random.randrange(SCREEN_HEIGHT + 80)
 
                 # See if the gem is hitting a wall
@@ -251,7 +258,7 @@ class MyGame(arcade.Window):
 
             while not jerry_placed_successfully:
                 # Position jerry
-                jerry.center_x = random.randrange(SCREEN_WIDTH + 200)
+                jerry.center_x = random.randrange(-500, SCREEN_WIDTH + 200)
                 jerry.center_y = random.randrange(SCREEN_HEIGHT + 80)
 
                 # Check if jerry is hitting a wall
@@ -273,6 +280,25 @@ class MyGame(arcade.Window):
             # Add jerry the list
             self.jerry_list.append(jerry)
 
+        # Now make the keys that we need and append them to their respective list
+        blue_key = arcade.Sprite("keyBlue.png", KEY_SCALING)
+        blue_key.center_x = -448
+        blue_key.center_y = 704
+        self.blue_key_list.append(blue_key)
+        red_key = arcade.Sprite("keyRed.png", KEY_SCALING)
+        red_key.center_x = -448
+        red_key.center_y = 604
+        self.red_key_list.append(red_key)
+        green_key = arcade.Sprite("keyGreen.png", KEY_SCALING)
+        green_key.center_x = -448
+        green_key.center_y = 504
+        self.green_key_list.append(green_key)
+        yellow_key = arcade.Sprite("keyYellow.png", KEY_SCALING)
+        yellow_key.center_x = -448
+        yellow_key.center_y = 404
+        self.yellow_key_list.append(yellow_key)
+
+
     def on_draw(self):
         arcade.start_render()
 
@@ -285,6 +311,10 @@ class MyGame(arcade.Window):
         self.gem_list.draw()
         self.special_gem_list.draw()
         self.jerry_list.draw()
+        self.blue_key_list.draw()
+        self.red_key_list.draw()
+        self.green_key_list.draw()
+        self.yellow_key_list.draw()
 
         # Select the (unscrolled) camera for our GUI
         self.camera_for_gui.use()
@@ -294,6 +324,7 @@ class MyGame(arcade.Window):
         arcade.draw_text("Y: " + str(round(self.player_sprite.center_y)),
                          730, 10, arcade.color.WHITE, 14)
         arcade.draw_text("Hit R to restart", 320, 10, arcade.color.WHITE, 22)
+        arcade.draw_text(KEY_TEXT, 210, 50, arcade.color.WHITE, 22)
 
     def on_update(self, delta_time):
         """ Movement and game logic """
@@ -307,7 +338,7 @@ class MyGame(arcade.Window):
         # If CAMERA_SPEED is 1, the camera will immediately move to the desired position.
         # Anything between 0 and 1 will have the camera move to the location with a smoother
         # pan.
-        CAMERA_SPEED = 0.5
+        CAMERA_SPEED = 1
         lower_left_corner = (self.player_sprite.center_x - self.width / 2,
                              self.player_sprite.center_y - self.height / 2)
         self.camera_for_sprites.move_to(lower_left_corner, CAMERA_SPEED)
@@ -333,6 +364,18 @@ class MyGame(arcade.Window):
             special_gem.remove_from_sprite_lists()
             self.score += 5
             arcade.play_sound(self.aaaah)
+
+        global KEY_TEXT
+        if arcade.check_for_collision_with_list(self.player_sprite, self.blue_key_list):
+            KEY_TEXT = "Press E to pick up the Blue Key"
+        elif arcade.check_for_collision_with_list(self.player_sprite, self.red_key_list):
+            KEY_TEXT = "Press E to pick up the Red Key"
+        elif arcade.check_for_collision_with_list(self.player_sprite, self.green_key_list):
+            KEY_TEXT = "Press E to pick up the Green Key"
+        elif arcade.check_for_collision_with_list(self.player_sprite, self.yellow_key_list):
+            KEY_TEXT = "Press E to pick up the Yellow Key"
+        else:
+            KEY_TEXT = ""
 
     def on_key_press(self, key, modifiers):
         """ Called whenever a key is pressed. """
@@ -361,9 +404,17 @@ class MyGame(arcade.Window):
             arcade.close_window()
         elif key == arcade.key.R:
             self.setup()
+        elif key == arcade.key.E:
+
+            """ Do what's below for every key """
+
+            if arcade.check_for_collision_with_list(self.player_sprite, self.blue_key_list):
+                self.has_blue_key = True
+                for blue_key in self.blue_key_list:
+                    blue_key.remove_from_sprite_lists()
 
     def on_key_release(self, key, modifiers):
-        """Called when the user releases a key. """
+        """ Called when the user releases a key. """
 
         if key == arcade.key.W or key == arcade.key.S:
             self.player_sprite.change_y = 0
