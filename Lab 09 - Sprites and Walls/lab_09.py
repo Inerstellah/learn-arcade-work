@@ -16,7 +16,7 @@ KEY_TEXT = ""
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 
-MOVEMENT_SPEED = 5
+MOVEMENT_SPEED = 1
 
 
 class MyGame(arcade.Window):
@@ -53,7 +53,10 @@ class MyGame(arcade.Window):
 
         # This variable holds our simple "physics engine"
         self.physics_engine = None
-        self.physics_engine_2 = None
+        self.physics_engine_green = None
+        self.physics_engine_blue = None
+        self.physics_engine_red = None
+        self.physics_engine_yellow = None
 
         # Create the cameras. One for the GUI, one for the sprites.
         # We scroll the 'sprite world' but not the GUI.
@@ -63,6 +66,7 @@ class MyGame(arcade.Window):
         self.squeak = arcade.load_sound("squeak.mp3")
         self.aah = arcade.load_sound("aah.wav")
         self.aaaah = arcade.load_sound("aaaah.wav")
+        self.coin_sound = arcade.load_sound("coin2.wav")
 
         # Booleans to see if player has a key
         self.has_blue_key = False
@@ -279,7 +283,10 @@ class MyGame(arcade.Window):
         # Create the physics engine. Give it a reference to the player, and
         # the walls we can't run into.
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
-        self.physics_engine_2 = arcade.PhysicsEngineSimple(self.player_sprite, self.green_wall_list)
+        self.physics_engine_green = arcade.PhysicsEngineSimple(self.player_sprite, self.green_wall_list)
+        self.physics_engine_blue = arcade.PhysicsEngineSimple(self.player_sprite, self.blue_wall_list)
+        self.physics_engine_red = arcade.PhysicsEngineSimple(self.player_sprite, self.red_wall_list)
+        self.physics_engine_yellow = arcade.PhysicsEngineSimple(self.player_sprite, self.yellow_wall_list)
         # Create the gems
         for i in range(GEM_COUNT):
             # Create the gem objects
@@ -349,20 +356,20 @@ class MyGame(arcade.Window):
 
         # Now make the keys that we need and append them to their respective list
         blue_key = arcade.Sprite("keyBlue.png", KEY_SCALING)
-        blue_key.center_x = -448
-        blue_key.center_y = 704
+        blue_key.center_x = -576
+        blue_key.center_y = 768
         self.blue_key_list.append(blue_key)
         red_key = arcade.Sprite("keyRed.png", KEY_SCALING)
-        red_key.center_x = -448
-        red_key.center_y = 604
+        red_key.center_x = 832
+        red_key.center_y = 128
         self.red_key_list.append(red_key)
         green_key = arcade.Sprite("keyGreen.png", KEY_SCALING)
         green_key.center_x = -448
         green_key.center_y = 504
         self.green_key_list.append(green_key)
         yellow_key = arcade.Sprite("keyYellow.png", KEY_SCALING)
-        yellow_key.center_x = -448
-        yellow_key.center_y = 404
+        yellow_key.center_x = 3008
+        yellow_key.center_y = -576
         self.yellow_key_list.append(yellow_key)
 
 
@@ -403,7 +410,10 @@ class MyGame(arcade.Window):
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
         self.physics_engine.update()
-        self.physics_engine_2.update()
+        self.physics_engine_green.update()
+        self.physics_engine_blue.update()
+        self.physics_engine_red.update()
+        self.physics_engine_yellow.update()
 
         # Scroll the window to the player.
         #
@@ -453,6 +463,15 @@ class MyGame(arcade.Window):
         if self.has_green_key:
             for green_wall in self.green_wall_list:
                 green_wall.remove_from_sprite_lists()
+        if self.has_blue_key:
+            for blue_wall in self.blue_wall_list:
+                blue_wall.remove_from_sprite_lists()
+        if self.has_red_key:
+            for red_wall in self.red_wall_list:
+                red_wall.remove_from_sprite_lists()
+        if self.has_yellow_key:
+            for yellow_wall in self.yellow_wall_list:
+                yellow_wall.remove_from_sprite_lists()
 
     def on_key_press(self, key, modifiers):
         """ Called whenever a key is pressed. """
@@ -484,18 +503,22 @@ class MyGame(arcade.Window):
         elif key == arcade.key.E:
             if arcade.check_for_collision_with_list(self.player_sprite, self.blue_key_list):
                 self.has_blue_key = True
+                arcade.play_sound(self.coin_sound)
                 for blue_key in self.blue_key_list:
                     blue_key.remove_from_sprite_lists()
             elif arcade.check_for_collision_with_list(self.player_sprite, self.red_key_list):
                 self.has_red_key = True
+                arcade.play_sound(self.coin_sound)
                 for red_key in self.red_key_list:
                     red_key.remove_from_sprite_lists()
             elif arcade.check_for_collision_with_list(self.player_sprite, self.green_key_list):
                 self.has_green_key = True
+                arcade.play_sound(self.coin_sound)
                 for green_key in self.green_key_list:
                     green_key.remove_from_sprite_lists()
             elif arcade.check_for_collision_with_list(self.player_sprite, self.yellow_key_list):
                 self.has_yellow_key = True
+                arcade.play_sound(self.coin_sound)
                 for yellow_key in self.yellow_key_list:
                     yellow_key.remove_from_sprite_lists()
 
