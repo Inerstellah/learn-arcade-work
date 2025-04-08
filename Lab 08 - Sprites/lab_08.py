@@ -122,11 +122,11 @@ class MyGame(arcade.Window):
 
         if len(self.seashell_list) < 1:
             arcade.draw_text("You collected all the seashells! Game over!",
-                             115, 300, arcade.color.BLACK, 22)
+                             115, 300, arcade.color.WHITE, 22)
             arcade.draw_text("You also collected " + str(CATS_HIT) + " of 3 cats!",
-                             205, 250, arcade.color.BLACK, 22)
+                             205, 250, arcade.color.WHITE, 22)
             arcade.draw_text("You can hit space to close btw",
-                             203, 200, arcade.color.BLACK, 22)
+                             203, 200, arcade.color.WHITE, 22)
             global OBJECT_SPEED, PLAYING
             OBJECT_SPEED = 0
             PLAYING = False
