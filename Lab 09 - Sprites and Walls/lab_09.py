@@ -63,7 +63,7 @@ class MyGame(arcade.Window):
         self.camera_for_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.camera_for_gui = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-        self.squeak = arcade.load_sound("squeak.mp3")
+        self.squeak = arcade.load_sound("squeak.wav")
         self.aah = arcade.load_sound("aah.wav")
         self.aaaah = arcade.load_sound("aaaah.wav")
         self.coin_sound = arcade.load_sound("coin2.wav")
