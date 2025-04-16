@@ -223,6 +223,11 @@ class MyGame(arcade.Window):
                     wall.center_y = y
                     self.wall_list.append(wall)
 
+        # Set these false so colored walls get re-drawn on reset if user collected any keys
+        self.has_blue_key = False
+        self.has_red_key = False
+        self.has_green_key = False
+        self.has_yellow_key = False
         # Now draw all the colored walls
         # Green walls:
         for i in range(2):
@@ -529,7 +534,6 @@ class MyGame(arcade.Window):
             self.player_sprite.change_y = 0
         elif key == arcade.key.A or key == arcade.key.D:
             self.player_sprite.change_x = 0
-
 
 def main():
     """ Main method """
