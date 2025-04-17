@@ -62,7 +62,6 @@ def binary_search(word, dictionary_list):
         else:
             return True  # Word found
 
-    print(f"Possible misspelling: '{word}'")
     return False
 
 def main():
@@ -71,15 +70,24 @@ def main():
     dictionary_words.sort()
     print(f"There are {len(dictionary_words)} words in the dictionary."
           f" Of these words, these are not included:\n")
-    print("--- Linear Search ---")
-    chapter_lines = read_in_file("AliceInWonderLand200.txt")
-    chapter_words = []
-    for line in chapter_lines:
-        words = split_line(line)
-        for word in words:
-            chapter_words.append(word)
-            word = word.upper()
-            linear_search(word, dictionary_words)
 
+    """ Linear Search """
+
+    print("--- Linear Search ---\n")
+    chapter_lines = read_in_file("AliceInWonderLand200.txt")
+    for i in range (len(chapter_lines)):
+        words = split_line(chapter_lines[i])
+        for word in words:
+            if not binary_search(word.upper(), dictionary_words):
+                print(f"Possible misspelling: '{word}' on line {i + 1}")
+
+    """ Binary Search """
+
+    print("\n--- Binary Search ---\n")
+    for i in range (len(chapter_lines)):
+        words = split_line(chapter_lines[i])
+        for word in words:
+            if not binary_search(word.upper(), dictionary_words):
+                print(f"Possible misspelling: '{word}' on line {i + 1}")
 
 main()
