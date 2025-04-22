@@ -3,6 +3,8 @@ from arcade import AnimationKeyframe
 import random
 import math
 
+"""Change PNG files on lines 174 and 178"""
+
 # Base variables
 movement_speed = 3
 player_scaling = 0.65
@@ -17,12 +19,13 @@ screen_width = 920
 screen_height = 680
 
 class Player:
-    def __init__(self, x, y, health, max_health, points):
+    def __init__(self, x, y, health, max_health, points, damage):
         self.x = x
         self.y = y
         self.health = 100
         self.max_health = 100
         self.points = 500
+        self.damage = 10
         self.player_sprite = arcade.AnimatedTimeBasedSprite(scale=player_scaling)
 
         self.idle_texture = arcade.load_texture(":resources:images/animated_characters/male_person/malePerson_idle.png")
@@ -111,36 +114,45 @@ class MyGame(arcade.Window):
         self.camera_for_sprites = arcade.Camera(screen_width, screen_height)
         self.camera_for_gui = arcade.Camera(screen_width, screen_height)
 
-        self.health_loss_delay = 0.3
-        self.health_regen_delay = 0.5
-        self.round_change_delay = 0
-        self.fire_rate_delay = 0.33
-        self.bullets_in_gun_mag = 8
-        self.bullets_in_gun_stock = 32
-        self.max_bullets_in_gun_stock = 80
-        self.gun_mag_max = 8
-        self.gun_ammo_text = ""
-        self.is_reloading = False
-        self.reload_timer = 0
-        self.reload_duration = 0.9
-        self.buy_ammo_cost = 0
-        self.buy_max_health_cost = 3000
-        self.buy_speed_cost = 5000
-        self.color_val = 0
-        self.color_change_delay = 0
+        self.health_loss_delay = 0.3  # how long it takes between hits to lose hp
+        self.health_regen_delay = 0.5  # how long it takes to regen
+        self.round_change_delay = 0  # delay to change round (set later on)
+        self.fire_rate_delay = 0.33  # delay between shots with full auto
+        self.bullets_in_gun_mag = 8  # initial bullets in mag
+        self.bullets_in_gun_stock = 32  # initial bullets in stock
+        self.max_bullets_in_gun_stock = 80  # initial gun stock max
+        self.gun_mag_max = 8  # initial gun mag max
+        self.gun_ammo_text = ""  # ammo text in bottom right
+        self.is_reloading = False  # boolean to check if reloading
+        self.reload_timer = 0  # how long player has been reloading for
+        self.reload_duration = 0.9  # how long it takes to reload
+        self.buy_ammo_cost = 0  # cost to buy ammo (determined by stock max - stock)
+        self.buy_max_health_cost = 3000  # initial max health upgrade cost
+        self.buy_speed_cost = 5000  # initial speed upgrade cost
+        self.buy_damage_cost = 1750  # initial damage upgrade cost
+        self.buy_fire_rate_cost = 3500  # initial fire rate upgrade cost
+        self.buy_mag_cost = 1500  # initial mag max upgrade cost
+        self.buy_stock_cost = 2000  # initial stock max upgrade cost
+        self.color_val = 0  # variable to change "Round:" text color
+        self.color_change_delay = 0  # time to switch "Round:" color (set later on)
 
-        self.mouse_x = 0
-        self.mouse_y = 0
+        self.mouse_x = 0  # user cursor x
+        self.mouse_y = 0  # user cursor y
 
-        self.camera_pos = []
+        self.camera_pos = []  # list to help convert mouse xy to world xy
 
         self.mouse_held = False
         self.mouse_pressed = False
         self.has_full_auto = False
+        self.full_auto_activated = False
 
         self.is_touching_ammo_station = False
         self.is_touching_max_health_station = False
         self.is_touching_speed_station = False
+        self.is_touching_damage_station = False
+        self.is_touching_fire_rate_station = False
+        self.is_touching_mag_station = False
+        self.is_touching_stock_station = False
 
 
     def setup(self):
@@ -151,7 +163,7 @@ class MyGame(arcade.Window):
         self.upgrade_stations = arcade.SpriteList()
 
         # Create the player
-        self.player_sprite = Player(200, 200, 100, 100, 500)
+        self.player_sprite = Player(200, 200, 100, 100, 500, 10)
         self.player_list.append(self.player_sprite.player_sprite)
 
         """ --- Create Upgrade Stations --- """
@@ -166,6 +178,14 @@ class MyGame(arcade.Window):
 
         upgrade_station = UpgradeStation(100, -350,
                                          "speed_station.png", 0.23, "speed_station")
+        self.upgrade_stations.append(upgrade_station)
+
+        upgrade_station = UpgradeStation(300, -375,"speed_station.png",
+                                         0.23, "fire_rate_station")
+        self.upgrade_stations.append(upgrade_station)
+
+        upgrade_station = UpgradeStation(-40, 300, "max_health_station.png",
+                                         0.22, "damage_station")
         self.upgrade_stations.append(upgrade_station)
 
         # Create Zombies
@@ -188,6 +208,7 @@ class MyGame(arcade.Window):
         self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite.player_sprite, self.zombies_list)
         self.physics_engine_upgrade_stations = (arcade.PhysicsEngineSimple
                                                 (self.player_sprite.player_sprite, self.upgrade_stations))
+
 
     def on_draw(self):
         arcade.start_render()
@@ -245,6 +266,26 @@ class MyGame(arcade.Window):
                              200, 200, arcade.color.WHITE, 22)
             arcade.draw_text(f"Current: {round(movement_speed, 2)}",
                              200, 170, arcade.color.WHITE, 22)
+        if self.is_touching_damage_station:
+            arcade.draw_text(f"Upgrade Damage: Cost {self.buy_damage_cost}",
+                             200, 200, arcade.color.WHITE, 22)
+            arcade.draw_text(f"Current: {self.player_sprite.damage}",
+                             200, 170, arcade.color.WHITE, 22)
+        if self.is_touching_fire_rate_station:
+            arcade.draw_text(f"Upgrade Fire Rate: Cost {self.buy_fire_rate_cost}",
+                             200, 200, arcade.color.WHITE, 22)
+            arcade.draw_text(f"Current: {self.fire_rate_delay} seconds per shot",
+                             200, 170, arcade.color.WHITE, 22)
+        if self.is_touching_mag_station:
+            arcade.draw_text(f"Upgrade Mag Size: Cost {self.buy_mag_cost}",
+                             200, 200, arcade.color.WHITE, 22)
+            arcade.draw_text(f"Current: {self.bullets_in_gun_mag} max",
+                             200, 170, arcade.color.WHITE, 22)
+        if self.is_touching_stock_station:
+            arcade.draw_text(f"Upgrade Stock Size: Cost {self.buy_stock_cost}",
+                             200, 200, arcade.color.WHITE, 22)
+            arcade.draw_text(f"Current: {self.max_bullets_in_gun_stock} max",
+                             200, 170, arcade.color.WHITE, 22)
 
 
     def on_update(self, delta_time):
@@ -289,7 +330,7 @@ class MyGame(arcade.Window):
         self.health_regen_delay += delta_time
 
         if self.player_sprite.health < self.player_sprite.max_health and self.health_regen_delay >= 0.5:
-            self.player_sprite.health += 2  # player gains 2 health twice per second always
+            self.player_sprite.health += 2  # player gains 2 health twice per second always (for now)
             self.health_regen_delay = 0
 
         for bullet in self.bullet_list:
@@ -298,7 +339,7 @@ class MyGame(arcade.Window):
                 # Find corresponding zombie object
                 for zombie in self.zombie_list:
                     if zombie.zombie_sprite == zombie_sprite:
-                        zombie.zombie_health -= 10  # bullet always deals 10 damage right now
+                        zombie.zombie_health -= self.player_sprite.damage  # bullet always deals 10 damage right now
                         self.player_sprite.points += 10  # give 10 points for bullet hit
                         if zombie.zombie_health <= 0:
                             zombie_sprite.remove_from_sprite_lists()  # makes zombie disappear
@@ -309,6 +350,10 @@ class MyGame(arcade.Window):
         self.is_touching_ammo_station = False
         self.is_touching_max_health_station = False
         self.is_touching_speed_station = False
+        self.is_touching_damage_station = False
+        self.is_touching_fire_rate_station = False
+
+        # check if touching any upgrade station
         for upgrade_station in self.upgrade_stations:
             if isinstance(upgrade_station, UpgradeStation):
                 if upgrade_station.station_type == "ammo_station":
@@ -327,28 +372,36 @@ class MyGame(arcade.Window):
                     if distance <= upgrade_station_proximity:
                         self.is_touching_speed_station = True
                         break
+                elif upgrade_station.station_type == "damage_station":
+                    distance = arcade.get_distance_between_sprites(self.player_sprite.player_sprite, upgrade_station)
+                    if distance <= upgrade_station_proximity:
+                        self.is_touching_damage_station = True
+                        break
+                elif upgrade_station.station_type == "fire_rate_station":
+                    distance = arcade.get_distance_between_sprites(self.player_sprite.player_sprite, upgrade_station)
+                    if distance <= upgrade_station_proximity:
+                        self.is_touching_fire_rate_station = True
+                        break
 
 
         self.camera_pos = lower_left_corner
 
-        if len(self.zombies_list) == 0:
+        if len(self.zombie_list) == 0:  # If all zombies are dead
+            # Change "Round:" color text
             self.color_change_delay += delta_time
-            if self.color_change_delay >= 0.75 and self.color_val == 0:
-                self.color_val = 255
-                self.color_change_delay = 0
-            elif self.color_change_delay >= 0.75 and self.color_val == 255:
-                self.color_val = 0
+            if self.color_change_delay >= 0.75:
+                self.color_val = 255 if self.color_val == 0 else 0
                 self.color_change_delay = 0
 
-
-
-
-        if len(self.zombie_list) == 0:  # if all zombies are dead
             global round_number
             self.round_change_delay += delta_time
             if self.round_change_delay >= 5:
                 round_number += 1
-                for i in range(initial_zombie_count + 2 * round_number):  # +2 zombies per round
+                self.color_change_delay = 0
+                self.round_change_delay = 0
+
+                # Determine zombie speed based on round number
+                for i in range(initial_zombie_count + 2 * round_number):
                     if round_number >= 18:
                         speed = random.choice([1, 2, 3, 4, 4.5])
                     elif round_number >= 14:
@@ -362,6 +415,7 @@ class MyGame(arcade.Window):
                     else:
                         speed = 0.5
 
+                    # Create zombie object
                     zombie = Zombie(random.randrange(-350, -200), random.randrange(-350, -200),
                                     initial_zombie_health + 8 * round_number, speed)
                     self.zombie_list.append(zombie)
@@ -380,7 +434,7 @@ class MyGame(arcade.Window):
                 self.is_reloading = False
 
         # Make shooting actually happen
-        if self.has_full_auto:
+        if self.has_full_auto and self.full_auto_activated:
             self.fire_rate_delay += delta_time
             if self.mouse_held and self.fire_rate_delay >= 0.33 and self.bullets_in_gun_mag > 0:
                 world_x = self.mouse_x + self.camera_pos[0]  # makes mouse coords work with the camera
@@ -392,7 +446,9 @@ class MyGame(arcade.Window):
                 self.bullet_list.append(bullet)
                 self.bullets_in_gun_mag -= 1  # lose a bullet when user shoots
                 self.fire_rate_delay = 0
-        elif self.mouse_pressed:
+            elif self.mouse_held and self.fire_rate_delay >= 0.33 and self.bullets_in_gun_mag == 0:
+                self.reload()
+        elif self.mouse_pressed and self.bullets_in_gun_mag > 0:
             world_x = self.mouse_x + self.camera_pos[0]  # makes mouse coords work with the camera
             world_y = self.mouse_y + self.camera_pos[1]  # makes mouse coords work with the camera
             bullet = Bullet(self.player_sprite.player_sprite.center_x,
@@ -433,6 +489,13 @@ class MyGame(arcade.Window):
             self.reload()
         elif key == arcade.key.J:
             self.has_full_auto = True
+        elif key == arcade.key.K and self.has_full_auto:
+            if self.full_auto_activated is False:
+                self.full_auto_activated = True
+            else:
+                self.mouse_pressed = False
+                self.full_auto_activated = False
+
 
     def on_key_release(self, key, modifiers):
         if key == arcade.key.W or key == arcade.key.S:
@@ -443,28 +506,56 @@ class MyGame(arcade.Window):
         if not (self.player_sprite.player_sprite.change_x or self.player_sprite.player_sprite.change_y):
             self.player_sprite.is_walking = False
 
+
     def reload(self):
         if not self.is_reloading and self.bullets_in_gun_stock > 0:  # if you have bullets in stock
             self.is_reloading = True
             self.reload_timer = 0
 
+
     def buy_ammo(self):
         self.player_sprite.points -= self.buy_ammo_cost
         self.bullets_in_gun_stock = self.max_bullets_in_gun_stock
 
+
     def buy_max_health(self):
         self.player_sprite.points -= self.buy_max_health_cost
-        self.buy_max_health_cost += round(int(self.buy_max_health_cost * 0.25))
+        self.buy_max_health_cost += round(self.buy_max_health_cost * 0.25)
         self.player_sprite.max_health += 5
+
 
     def buy_speed(self):
         self.player_sprite.points -= self.buy_speed_cost
-        self.buy_speed_cost += round(int(self.buy_speed_cost * 0.35))
+        self.buy_speed_cost += round(self.buy_speed_cost * 0.35)
         global movement_speed
         movement_speed += 0.2
 
+
+    def buy_damage(self):
+        self.player_sprite.points -= self.buy_damage_cost
+        self.buy_damage_cost += round(self.buy_damage_cost * 0.2)
+        self.player_sprite.damage += 5
+
+
+    def buy_fire_rate(self):
+        self.player.points -= self.buy_fire_rate_cost
+        self.fire_rate_cost += round(self.buy_fire_rate_cost * 0.3)
+        self.fire_rate_delay -= 0.02
+
+
+    def buy_mag_max(self):
+        self.player_sprite.points -= self.buy_mag_cost
+        self.buy_mag_cost += round(self.buy_mag_cost * 0.25)
+        self.gun_mag_max += 1
+
+
+    def buy_stock_max(self):
+        self.player_sprite.points -= self.buy_stock_cost
+        self.buy_stock_cost += round(self.buy_stock_cost * 0.18)
+        self.max_bullets_in_gun_stock += 4
+
+
     def on_mouse_press(self, x, y, button, modifiers):
-        # Create and add bullet to its list if you have ammo in the mag
         if self.bullets_in_gun_mag > 0 and button == arcade.MOUSE_BUTTON_LEFT:
             self.mouse_held = True
             self.mouse_pressed = True
@@ -473,9 +564,16 @@ class MyGame(arcade.Window):
 
         elif button == arcade.MOUSE_BUTTON_LEFT:
             self.reload()  # reload automatically when u try to shoot with 0 bullets
+                           # only works with semi auto
+
 
     def on_mouse_release(self, x, y, button, modifiers):
         self.mouse_held = False
+
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.mouse_x = x
+        self.mouse_y = y
 
 
 def main():
