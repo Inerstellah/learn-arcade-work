@@ -3,8 +3,6 @@ from arcade import AnimationKeyframe
 import random
 import math
 
-"""Change PNG files on lines 174 and 178"""
-
 # Base variables
 movement_speed = 3
 player_scaling = 0.65
@@ -24,7 +22,7 @@ class Player:
         self.y = y
         self.health = 100
         self.max_health = 100
-        self.points = 500
+        self.points = 500000
         self.damage = 10
         self.player_sprite = arcade.AnimatedTimeBasedSprite(scale=player_scaling)
 
@@ -118,6 +116,7 @@ class MyGame(arcade.Window):
         self.health_regen_delay = 0.5  # how long it takes to regen
         self.round_change_delay = 0  # delay to change round (set later on)
         self.fire_rate_delay = 0.33  # delay between shots with full auto
+        self.fire_rate_delay_stat = 0.33
         self.bullets_in_gun_mag = 8  # initial bullets in mag
         self.bullets_in_gun_stock = 32  # initial bullets in stock
         self.max_bullets_in_gun_stock = 80  # initial gun stock max
@@ -180,12 +179,20 @@ class MyGame(arcade.Window):
                                          "speed_station.png", 0.23, "speed_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(300, -375,"speed_station.png",
+        upgrade_station = UpgradeStation(300, -375,"fire_rate_station.png",
                                          0.23, "fire_rate_station")
         self.upgrade_stations.append(upgrade_station)
 
         upgrade_station = UpgradeStation(-40, 300, "max_health_station.png",
                                          0.22, "damage_station")
+        self.upgrade_stations.append(upgrade_station)
+
+        upgrade_station = UpgradeStation(-300, 300, "max_health_station.png",
+                                         0.22, "mag_max_station")
+        self.upgrade_stations.append(upgrade_station)
+
+        upgrade_station = UpgradeStation(-200, 100, "max_health_station.png",
+                                         0.22, "stock_max_station")
         self.upgrade_stations.append(upgrade_station)
 
         # Create Zombies
@@ -274,12 +281,12 @@ class MyGame(arcade.Window):
         if self.is_touching_fire_rate_station:
             arcade.draw_text(f"Upgrade Fire Rate: Cost {self.buy_fire_rate_cost}",
                              200, 200, arcade.color.WHITE, 22)
-            arcade.draw_text(f"Current: {self.fire_rate_delay} seconds per shot",
+            arcade.draw_text(f"Current: {self.fire_rate_delay_stat} seconds per shot",
                              200, 170, arcade.color.WHITE, 22)
         if self.is_touching_mag_station:
             arcade.draw_text(f"Upgrade Mag Size: Cost {self.buy_mag_cost}",
                              200, 200, arcade.color.WHITE, 22)
-            arcade.draw_text(f"Current: {self.bullets_in_gun_mag} max",
+            arcade.draw_text(f"Current: {self.gun_mag_max} max",
                              200, 170, arcade.color.WHITE, 22)
         if self.is_touching_stock_station:
             arcade.draw_text(f"Upgrade Stock Size: Cost {self.buy_stock_cost}",
@@ -352,6 +359,8 @@ class MyGame(arcade.Window):
         self.is_touching_speed_station = False
         self.is_touching_damage_station = False
         self.is_touching_fire_rate_station = False
+        self.is_touching_mag_station = False
+        self.is_touching_stock_station = False
 
         # check if touching any upgrade station
         for upgrade_station in self.upgrade_stations:
@@ -381,6 +390,16 @@ class MyGame(arcade.Window):
                     distance = arcade.get_distance_between_sprites(self.player_sprite.player_sprite, upgrade_station)
                     if distance <= upgrade_station_proximity:
                         self.is_touching_fire_rate_station = True
+                        break
+                elif upgrade_station.station_type == "mag_max_station":
+                    distance = arcade.get_distance_between_sprites(self.player_sprite.player_sprite, upgrade_station)
+                    if distance <= upgrade_station_proximity:
+                        self.is_touching_mag_station = True
+                        break
+                elif upgrade_station.station_type == "stock_max_station":
+                    distance = arcade.get_distance_between_sprites(self.player_sprite.player_sprite, upgrade_station)
+                    if distance <= upgrade_station_proximity:
+                        self.is_touching_stock_station = True
                         break
 
 
@@ -436,7 +455,7 @@ class MyGame(arcade.Window):
         # Make shooting actually happen
         if self.has_full_auto and self.full_auto_activated:
             self.fire_rate_delay += delta_time
-            if self.mouse_held and self.fire_rate_delay >= 0.33 and self.bullets_in_gun_mag > 0:
+            if self.mouse_held and self.fire_rate_delay >= self.fire_rate_delay_stat and self.bullets_in_gun_mag > 0:
                 world_x = self.mouse_x + self.camera_pos[0]  # makes mouse coords work with the camera
                 world_y = self.mouse_y + self.camera_pos[1]  # makes mouse coords work with the camera
                 bullet = Bullet(self.player_sprite.player_sprite.center_x,
@@ -481,12 +500,25 @@ class MyGame(arcade.Window):
             # If you're touching max health station, and you have enough points, then
                 self.buy_max_health()
             elif self.is_touching_speed_station and self.player_sprite.points >= self.buy_speed_cost:
-            # If you're touching max health station, and you have enough points, then
+            # If you're touching speed station, and you have enough points, then
                 self.buy_speed()
+            elif self.is_touching_damage_station and self.player_sprite.points >= self.buy_damage_cost:
+            # If you're touching damage station, and you have enough points, then
+                self.buy_damage()
+            elif self.is_touching_fire_rate_station and self.player_sprite.points >= self.buy_fire_rate_cost:
+            # If you're touching fire rate station, and you have enough points, then
+                self.buy_fire_rate()
+            elif self.is_touching_mag_station and self.player_sprite.points >= self.buy_mag_cost:
+            # If you're touching mag station, and you have enough points, then
+                self.buy_mag_max()
+            elif self.is_touching_stock_station and self.player_sprite.points >= self.buy_stock_cost:
+            # If you're touching stock station, and you have enough points, then
+                self.buy_stock_max()
         elif key == arcade.key.SPACE:
             arcade.close_window()
         elif key == arcade.key.R:
-            self.reload()
+            if self.bullets_in_gun_mag < self.gun_mag_max:
+                self.reload()
         elif key == arcade.key.J:
             self.has_full_auto = True
         elif key == arcade.key.K and self.has_full_auto:
@@ -538,9 +570,11 @@ class MyGame(arcade.Window):
 
 
     def buy_fire_rate(self):
-        self.player.points -= self.buy_fire_rate_cost
-        self.fire_rate_cost += round(self.buy_fire_rate_cost * 0.3)
+        self.player_sprite.points -= self.buy_fire_rate_cost
+        self.buy_fire_rate_cost += round(self.buy_fire_rate_cost * 0.3)
         self.fire_rate_delay -= 0.02
+        self.fire_rate_delay_stat = round(self.fire_rate_delay_stat - 0.02, 3)
+
 
 
     def buy_mag_max(self):
