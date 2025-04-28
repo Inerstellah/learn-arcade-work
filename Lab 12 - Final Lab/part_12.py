@@ -7,6 +7,7 @@ import math
 movement_speed = 3
 player_scaling = 0.65
 zombie_scaling = 0.65
+crosshair_scaling = 0.12
 initial_zombie_count = 3
 initial_zombie_health = 20
 round_number = 1
@@ -22,7 +23,7 @@ class Player:
         self.y = y
         self.health = 100
         self.max_health = 100
-        self.points = 500000
+        self.points = 5000000
         self.damage = 10
         self.player_sprite = arcade.AnimatedTimeBasedSprite(scale=player_scaling)
 
@@ -87,6 +88,14 @@ class Bullet(arcade.Sprite):
         self.angle = math.degrees(angle)
 
 
+class Crosshair(arcade.Sprite):
+    def __init__(self, x, y):
+        super().__init__("crosshair.png", crosshair_scaling)
+
+        self.center_x = x
+        self.center_y = y
+
+
 class UpgradeStation(arcade.Sprite):
     def __init__(self, x, y, image, scale, station_type):
         super().__init__(image, scale)
@@ -104,8 +113,10 @@ class MyGame(arcade.Window):
         self.gun_list = arcade.SpriteList()
         self.bullet_list = arcade.SpriteList()
         self.upgrade_stations = arcade.SpriteList()
+        self.crosshair_list = arcade.SpriteList()
 
         self.player_sprite = None
+        self.crosshair_sprite = None
         self.physics_engine = None
         self.physics_engine_upgrade_stations = None
 
@@ -134,6 +145,9 @@ class MyGame(arcade.Window):
         self.buy_stock_cost = 2000  # initial stock max upgrade cost
         self.color_val = 0  # variable to change "Round:" text color
         self.color_change_delay = 0  # time to switch "Round:" color (set later on)
+        self.total_zombies = 5  # total zombies in a round (set later on)
+        self.on_screen_zombies = 5  # total on-screen zombies (set later on)
+        self.zombie_spawn_location = 0  # random spot for zombie to spawn (set later on)
 
         self.mouse_x = 0  # user cursor x
         self.mouse_y = 0  # user cursor y
@@ -152,6 +166,8 @@ class MyGame(arcade.Window):
         self.is_touching_fire_rate_station = False
         self.is_touching_mag_station = False
         self.is_touching_stock_station = False
+
+        self.set_mouse_visible(False)
 
 
     def setup(self):
@@ -183,7 +199,7 @@ class MyGame(arcade.Window):
                                          0.23, "fire_rate_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(-40, 300, "max_health_station.png",
+        upgrade_station = UpgradeStation(-40, 300, "damage_station.png",
                                          0.22, "damage_station")
         self.upgrade_stations.append(upgrade_station)
 
@@ -216,6 +232,10 @@ class MyGame(arcade.Window):
         self.physics_engine_upgrade_stations = (arcade.PhysicsEngineSimple
                                                 (self.player_sprite.player_sprite, self.upgrade_stations))
 
+        # Make the crosshair
+        self.crosshair_sprite = Crosshair(0, 0)
+        self.crosshair_list.append(self.crosshair_sprite)
+
 
     def on_draw(self):
         arcade.start_render()
@@ -228,6 +248,8 @@ class MyGame(arcade.Window):
         self.upgrade_stations.draw()
 
         self.bullet_list.draw()
+
+        self.crosshair_list.draw()
 
         self.camera_for_gui.use()
 
@@ -243,6 +265,9 @@ class MyGame(arcade.Window):
 
         arcade.draw_text(f"{self.player_sprite.points}",
                          screen_width - 100, 120, arcade.color.WHITE, 20)  # show points
+
+        arcade.draw_text(f"{self.on_screen_zombies}", screen_width - 50, screen_height - 50,
+                         arcade.color.RED, 22)
 
         if self.is_reloading:
             bar_width = 200
@@ -346,12 +371,14 @@ class MyGame(arcade.Window):
                 # Find corresponding zombie object
                 for zombie in self.zombie_list:
                     if zombie.zombie_sprite == zombie_sprite:
-                        zombie.zombie_health -= self.player_sprite.damage  # bullet always deals 10 damage right now
+                        zombie.zombie_health -= self.player_sprite.damage  # zombie loses health based on player damage
                         self.player_sprite.points += 10  # give 10 points for bullet hit
                         if zombie.zombie_health <= 0:
                             zombie_sprite.remove_from_sprite_lists()  # makes zombie disappear
-                            self.zombie_list.remove(zombie)
+                            self.zombie_list.remove(zombie)  # takes dead zombie out of the list
                             self.player_sprite.points += 50  # + 50 points for kill
+                            self.total_zombies -= 1  # total zombie count goes down by 1 (duh)
+                            self.on_screen_zombies -= 1  # on-screen zombie count goes down by 1 (duh)
                 bullet.remove_from_sprite_lists()  # makes bullet disappear
 
         self.is_touching_ammo_station = False
@@ -412,15 +439,16 @@ class MyGame(arcade.Window):
                 self.color_val = 255 if self.color_val == 0 else 0
                 self.color_change_delay = 0
 
-            global round_number
+            global round_number, speed
             self.round_change_delay += delta_time
             if self.round_change_delay >= 5:
                 round_number += 1
+                self.total_zombies = initial_zombie_count + 2 * round_number
                 self.color_change_delay = 0
                 self.round_change_delay = 0
 
                 # Determine zombie speed based on round number
-                for i in range(initial_zombie_count + 2 * round_number):
+                for i in range(self.total_zombies):
                     if round_number >= 18:
                         speed = random.choice([1, 2, 3, 4, 4.5])
                     elif round_number >= 14:
@@ -433,12 +461,44 @@ class MyGame(arcade.Window):
                         speed = random.choice([0.5, 1.5])
                     else:
                         speed = 0.5
-
                     # Create zombie object
-                    zombie = Zombie(random.randrange(-350, -200), random.randrange(-350, -200),
-                                    initial_zombie_health + 8 * round_number, speed)
-                    self.zombie_list.append(zombie)
-                    self.zombies_list.append(zombie.zombie_sprite)
+                    self.zombie_spawn_location = random.randrange(1, 7)
+                    if self.zombie_spawn_location == 1:
+                        zombie = Zombie(random.randrange(-350, -200), random.randrange(-350, -200),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 2:
+                        zombie = Zombie(random.randrange(-200, -50), random.randrange(-200, -50),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 3:
+                        zombie = Zombie(random.randrange(-200, -50), random.randrange(100, 250),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 4:
+                        zombie = Zombie(random.randrange(250, 500), random.randrange(0, 150),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 5:
+                        zombie = Zombie(random.randrange(300, 450), random.randrange(100, 250),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 6:
+                        zombie = Zombie(random.randrange(400, 500), random.randrange(10, 260),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
 
         if self.is_reloading:  # if you're reloading
             self.reload_timer += delta_time  # start reload delay
@@ -453,7 +513,7 @@ class MyGame(arcade.Window):
                 self.is_reloading = False
 
         # Make shooting actually happen
-        if self.has_full_auto and self.full_auto_activated:
+        if self.has_full_auto and self.full_auto_activated and not self.is_reloading:
             self.fire_rate_delay += delta_time
             if self.mouse_held and self.fire_rate_delay >= self.fire_rate_delay_stat and self.bullets_in_gun_mag > 0:
                 world_x = self.mouse_x + self.camera_pos[0]  # makes mouse coords work with the camera
@@ -467,7 +527,7 @@ class MyGame(arcade.Window):
                 self.fire_rate_delay = 0
             elif self.mouse_held and self.fire_rate_delay >= 0.33 and self.bullets_in_gun_mag == 0:
                 self.reload()
-        elif self.mouse_pressed and self.bullets_in_gun_mag > 0:
+        elif self.mouse_pressed and self.bullets_in_gun_mag > 0 and not self.is_reloading:
             world_x = self.mouse_x + self.camera_pos[0]  # makes mouse coords work with the camera
             world_y = self.mouse_y + self.camera_pos[1]  # makes mouse coords work with the camera
             bullet = Bullet(self.player_sprite.player_sprite.center_x,
@@ -477,6 +537,11 @@ class MyGame(arcade.Window):
             self.bullet_list.append(bullet)
             self.bullets_in_gun_mag -= 1  # lose a bullet when user shoots
             self.mouse_pressed = False
+
+        world_x = self.mouse_x + self.camera_pos[0]  # makes mouse coords work with the camera
+        world_y = self.mouse_y + self.camera_pos[1]  # makes mouse coords work with the camera
+        self.crosshair_sprite.center_x = world_x
+        self.crosshair_sprite.center_y = world_y
 
 
     def on_key_press(self, key, modifiers):
@@ -515,6 +580,7 @@ class MyGame(arcade.Window):
             # If you're touching stock station, and you have enough points, then
                 self.buy_stock_max()
         elif key == arcade.key.SPACE:
+            print(f"ggs, you made it to round {round_number}")
             arcade.close_window()
         elif key == arcade.key.R:
             if self.bullets_in_gun_mag < self.gun_mag_max:
@@ -552,26 +618,26 @@ class MyGame(arcade.Window):
 
     def buy_max_health(self):
         self.player_sprite.points -= self.buy_max_health_cost
-        self.buy_max_health_cost += round(self.buy_max_health_cost * 0.25)
+        self.buy_max_health_cost += round(self.buy_max_health_cost * 0.15)
         self.player_sprite.max_health += 5
 
 
     def buy_speed(self):
         self.player_sprite.points -= self.buy_speed_cost
-        self.buy_speed_cost += round(self.buy_speed_cost * 0.35)
+        self.buy_speed_cost += round(self.buy_speed_cost * 0.25)
         global movement_speed
         movement_speed += 0.2
 
 
     def buy_damage(self):
         self.player_sprite.points -= self.buy_damage_cost
-        self.buy_damage_cost += round(self.buy_damage_cost * 0.2)
+        self.buy_damage_cost += round(self.buy_damage_cost * 0.18)
         self.player_sprite.damage += 5
 
 
     def buy_fire_rate(self):
         self.player_sprite.points -= self.buy_fire_rate_cost
-        self.buy_fire_rate_cost += round(self.buy_fire_rate_cost * 0.3)
+        self.buy_fire_rate_cost += round(self.buy_fire_rate_cost * 0.25)
         self.fire_rate_delay -= 0.02
         self.fire_rate_delay_stat = round(self.fire_rate_delay_stat - 0.02, 3)
 
@@ -579,13 +645,13 @@ class MyGame(arcade.Window):
 
     def buy_mag_max(self):
         self.player_sprite.points -= self.buy_mag_cost
-        self.buy_mag_cost += round(self.buy_mag_cost * 0.25)
+        self.buy_mag_cost += round(self.buy_mag_cost * 0.15)
         self.gun_mag_max += 1
 
 
     def buy_stock_max(self):
         self.player_sprite.points -= self.buy_stock_cost
-        self.buy_stock_cost += round(self.buy_stock_cost * 0.18)
+        self.buy_stock_cost += round(self.buy_stock_cost * 0.14)
         self.max_bullets_in_gun_stock += 4
 
 
