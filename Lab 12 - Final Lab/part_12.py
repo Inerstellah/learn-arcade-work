@@ -7,6 +7,7 @@ import math
 movement_speed = 3
 player_scaling = 0.65
 zombie_scaling = 0.65
+wall_scaling = 0.5
 initial_zombie_count = 3
 initial_zombie_health = 20
 round_number = 1
@@ -22,7 +23,7 @@ class Player:
         self.y = y
         self.health = 100
         self.max_health = 100
-        self.points = 500000
+        self.points = 500
         self.damage = 10
         self.player_sprite = arcade.AnimatedTimeBasedSprite(scale=player_scaling)
 
@@ -94,6 +95,7 @@ class UpgradeStation(arcade.Sprite):
         self.center_y = y
         self.station_type = station_type
 
+
 class MyGame(arcade.Window):
     def __init__(self):
         super().__init__(screen_width, screen_height, "COD: Zombies ripoff")
@@ -106,8 +108,9 @@ class MyGame(arcade.Window):
         self.upgrade_stations = arcade.SpriteList()
 
         self.player_sprite = None
-        self.physics_engine = None
+        self.physics_engine_zombies = None
         self.physics_engine_upgrade_stations = None
+        self.physics_engine_walls = None
 
         self.camera_for_sprites = arcade.Camera(screen_width, screen_height)
         self.camera_for_gui = arcade.Camera(screen_width, screen_height)
@@ -134,6 +137,8 @@ class MyGame(arcade.Window):
         self.buy_stock_cost = 2000  # initial stock max upgrade cost
         self.color_val = 0  # variable to change "Round:" text color
         self.color_change_delay = 0  # time to switch "Round:" color (set later on)
+        self.on_screen_zombies = 5  # total on-screen zombies (set later on)
+        self.zombie_spawn_location = 0  # random spot for zombie to spawn (set later on)
 
         self.mouse_x = 0  # user cursor x
         self.mouse_y = 0  # user cursor y
@@ -144,6 +149,9 @@ class MyGame(arcade.Window):
         self.mouse_pressed = False
         self.has_full_auto = False
         self.full_auto_activated = False
+
+        self.wall_left = False
+        self.wall_below = False
 
         self.is_touching_ammo_station = False
         self.is_touching_max_health_station = False
@@ -183,7 +191,7 @@ class MyGame(arcade.Window):
                                          0.23, "fire_rate_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(-40, 300, "max_health_station.png",
+        upgrade_station = UpgradeStation(-40, 300, "damage_station.png",
                                          0.22, "damage_station")
         self.upgrade_stations.append(upgrade_station)
 
@@ -211,10 +219,43 @@ class MyGame(arcade.Window):
             self.zombie_list.append(zombie)
             self.zombies_list.append(zombie.zombie_sprite)
 
+        for i in range(2):
+            for j in range(24):
+                if self.wall_left:
+                    wall = arcade.Sprite(":resources:images/tiles/rock.png", wall_scaling)
+                    wall.center_x = -576 + 1536 * i
+                    wall.center_y = 1024 - 64 * j
+                    self.wall_list.append(wall)
+                    self.wall_left = False
+                else:
+                    wall = arcade.Sprite(":resources:images/tiles/rock.png", wall_scaling)
+                    wall.center_x = -512 + 1536 * i
+                    wall.center_y = 1024 - 64 * j
+                    self.wall_list.append(wall)
+                    self.wall_left = True
+
+        for i in range(2):
+            for j in range(24):
+                if self.wall_below:
+                    wall = arcade.Sprite(":resources:images/tiles/rock.png", wall_scaling)
+                    wall.center_x = -512 + 64 * j
+                    wall.center_y = -448 + 1408 * i
+                    self.wall_list.append(wall)
+                    self.wall_below = False
+                else:
+                    wall = arcade.Sprite(":resources:images/tiles/rock.png", wall_scaling)
+                    wall.center_x = -512 + 64 * j
+                    wall.center_y = -384 + 1408 * i
+                    self.wall_list.append(wall)
+                    self.wall_below = True
+
         # Make it so player can move and doesn't phase through zombies (physics engine uses sprite.change_x/y)
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite.player_sprite, self.zombies_list)
-        self.physics_engine_upgrade_stations = (arcade.PhysicsEngineSimple
-                                                (self.player_sprite.player_sprite, self.upgrade_stations))
+        self.physics_engine_zombies = arcade.PhysicsEngineSimple(
+            self.player_sprite.player_sprite, self.zombies_list)
+        self.physics_engine_upgrade_stations = arcade.PhysicsEngineSimple(
+            self.player_sprite.player_sprite, self.upgrade_stations)
+        self.physics_engine_walls = arcade.PhysicsEngineSimple(
+            self.player_sprite.player_sprite, self.wall_list)
 
 
     def on_draw(self):
@@ -228,6 +269,7 @@ class MyGame(arcade.Window):
         self.upgrade_stations.draw()
 
         self.bullet_list.draw()
+        self.wall_list.draw()
 
         self.camera_for_gui.use()
 
@@ -296,8 +338,11 @@ class MyGame(arcade.Window):
 
 
     def on_update(self, delta_time):
-        self.physics_engine.update()
+
+        self.physics_engine_zombies.update()
         self.physics_engine_upgrade_stations.update()
+        self.physics_engine_walls.update()
+
         lower_left_corner = (self.player_sprite.player_sprite.center_x - self.width / 2,
                              self.player_sprite.player_sprite.center_y - self.height / 2)
         self.camera_for_sprites.move_to(lower_left_corner, camera_speed)
@@ -412,15 +457,16 @@ class MyGame(arcade.Window):
                 self.color_val = 255 if self.color_val == 0 else 0
                 self.color_change_delay = 0
 
-            global round_number
+            global round_number, speed
             self.round_change_delay += delta_time
             if self.round_change_delay >= 5:
                 round_number += 1
+                self.total_zombies = initial_zombie_count + 2 * round_number
                 self.color_change_delay = 0
                 self.round_change_delay = 0
 
                 # Determine zombie speed based on round number
-                for i in range(initial_zombie_count + 2 * round_number):
+                for i in range(self.total_zombies):
                     if round_number >= 18:
                         speed = random.choice([1, 2, 3, 4, 4.5])
                     elif round_number >= 14:
@@ -433,12 +479,44 @@ class MyGame(arcade.Window):
                         speed = random.choice([0.5, 1.5])
                     else:
                         speed = 0.5
-
                     # Create zombie object
-                    zombie = Zombie(random.randrange(-350, -200), random.randrange(-350, -200),
-                                    initial_zombie_health + 8 * round_number, speed)
-                    self.zombie_list.append(zombie)
-                    self.zombies_list.append(zombie.zombie_sprite)
+                    self.zombie_spawn_location = random.randrange(1, 7)
+                    if self.zombie_spawn_location == 1:
+                        zombie = Zombie(random.randrange(-350, -200), random.randrange(-350, -200),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 2:
+                        zombie = Zombie(random.randrange(-200, -50), random.randrange(-200, -50),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 3:
+                        zombie = Zombie(random.randrange(-200, -50), random.randrange(100, 250),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 4:
+                        zombie = Zombie(random.randrange(250, 500), random.randrange(0, 150),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 5:
+                        zombie = Zombie(random.randrange(300, 450), random.randrange(100, 250),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
+                    elif self.zombie_spawn_location == 6:
+                        zombie = Zombie(random.randrange(400, 500), random.randrange(10, 260),
+                                        initial_zombie_health + 8 * round_number, speed)
+                        self.zombie_list.append(zombie)
+                        self.zombies_list.append(zombie.zombie_sprite)
+                        self.on_screen_zombies += 1
 
         if self.is_reloading:  # if you're reloading
             self.reload_timer += delta_time  # start reload delay
@@ -481,16 +559,16 @@ class MyGame(arcade.Window):
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.W:
-            self.player_sprite.player_sprite.change_y = movement_speed / 2
+            self.player_sprite.player_sprite.change_y = movement_speed / 3
             self.player_sprite.is_walking = True
         elif key == arcade.key.A:
-            self.player_sprite.player_sprite.change_x = -movement_speed / 2
+            self.player_sprite.player_sprite.change_x = -movement_speed / 3
             self.player_sprite.is_walking = True
         elif key == arcade.key.S:
-            self.player_sprite.player_sprite.change_y = -movement_speed / 2
+            self.player_sprite.player_sprite.change_y = -movement_speed / 3
             self.player_sprite.is_walking = True
         elif key == arcade.key.D:
-            self.player_sprite.player_sprite.change_x = movement_speed / 2
+            self.player_sprite.player_sprite.change_x = movement_speed / 3
             self.player_sprite.is_walking = True
         elif key == arcade.key.E:
             if self.is_touching_ammo_station and self.player_sprite.points >= self.buy_ammo_cost:
