@@ -34,7 +34,7 @@ class Player:
             texture_path = f":resources:images/animated_characters/male_person/malePerson_walk{i}.png"
             texture = arcade.load_texture(texture_path)
             keyframe = AnimationKeyframe(i, 125, texture)  # 125 ms = 0.125 seconds per frame
-            self.walking_textures.append(keyframe)
+            self.walking_textures.append(keyframe)  # used ChatGPT to make this code btw
 
         self.player_sprite.texture = self.idle_texture
         self.is_walking = False
@@ -96,6 +96,17 @@ class UpgradeStation(arcade.Sprite):
         self.station_type = station_type
 
 
+class ZombieSpawner:
+    def __init__(self, x, y, radius, color):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.color = color
+
+    def draw(self):
+        arcade.draw_circle_filled(self.x, self.y, self.radius, self.color)
+
+
 class MyGame(arcade.Window):
     def __init__(self):
         super().__init__(screen_width, screen_height, "COD: Zombies ripoff")
@@ -106,6 +117,7 @@ class MyGame(arcade.Window):
         self.gun_list = arcade.SpriteList()
         self.bullet_list = arcade.SpriteList()
         self.upgrade_stations = arcade.SpriteList()
+        self.zombie_spawn_locations = []
 
         self.player_sprite = None
         self.physics_engine_zombies = None
@@ -128,16 +140,15 @@ class MyGame(arcade.Window):
         self.is_reloading = False  # boolean to check if reloading
         self.reload_timer = 0  # how long player has been reloading for
         self.reload_duration = 0.9  # how long it takes to reload
-        self.buy_ammo_cost = 0  # cost to buy ammo (determined by stock max - stock)
-        self.buy_max_health_cost = 3000  # initial max health upgrade cost
-        self.buy_speed_cost = 5000  # initial speed upgrade cost
-        self.buy_damage_cost = 1750  # initial damage upgrade cost
-        self.buy_fire_rate_cost = 3500  # initial fire rate upgrade cost
-        self.buy_mag_cost = 1500  # initial mag max upgrade cost
+        self.buy_ammo_cost = 0  # cost to buy ammo (determined by (stock max - stock) * 5)
+        self.buy_max_health_cost = 1500  # initial max health upgrade cost
+        self.buy_speed_cost = 2500  # initial speed upgrade cost
+        self.buy_damage_cost = 1350  # initial damage upgrade cost
+        self.buy_fire_rate_cost = 3000  # initial fire rate upgrade cost
+        self.buy_mag_cost = 1200  # initial mag max upgrade cost
         self.buy_stock_cost = 2000  # initial stock max upgrade cost
         self.color_val = 0  # variable to change "Round:" text color
         self.color_change_delay = 0  # time to switch "Round:" color (set later on)
-        self.on_screen_zombies = 5  # total on-screen zombies (set later on)
         self.zombie_spawn_location = 0  # random spot for zombie to spawn (set later on)
 
         self.mouse_x = 0  # user cursor x
@@ -161,6 +172,8 @@ class MyGame(arcade.Window):
         self.is_touching_mag_station = False
         self.is_touching_stock_station = False
 
+        self.you_died = False
+
 
     def setup(self):
         arcade.set_background_color(arcade.color.FOREST_GREEN)
@@ -179,23 +192,23 @@ class MyGame(arcade.Window):
                                          "buy_ammo_station.png", 0.25, "ammo_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(600, 200,
+        upgrade_station = UpgradeStation(600, -200,
                                          "max_health_station.png", 0.22, "max_health_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(100, -350,
+        upgrade_station = UpgradeStation(100, -300,
                                          "speed_station.png", 0.23, "speed_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(300, -375,"fire_rate_station.png",
+        upgrade_station = UpgradeStation(800, 375,"fire_rate_station.png",
                                          0.23, "fire_rate_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(-40, 300, "damage_station.png",
+        upgrade_station = UpgradeStation(-40, 600, "damage_station.png",
                                          0.22, "damage_station")
         self.upgrade_stations.append(upgrade_station)
 
-        upgrade_station = UpgradeStation(-300, 300, "max_health_station.png",
+        upgrade_station = UpgradeStation(550, 750, "mag_max_station.png",
                                          0.22, "mag_max_station")
         self.upgrade_stations.append(upgrade_station)
 
@@ -218,6 +231,25 @@ class MyGame(arcade.Window):
                             initial_zombie_health + 8 * round_number, speed)
             self.zombie_list.append(zombie)
             self.zombies_list.append(zombie.zombie_sprite)
+
+        # Create zombie locations
+        spawner = ZombieSpawner(-200, -200, 35, arcade.csscolor.GRAY)
+        self.zombie_spawn_locations.append(spawner)
+
+        spawner = ZombieSpawner(-350, 400, 35, arcade.csscolor.GRAY)
+        self.zombie_spawn_locations.append(spawner)
+
+        spawner = ZombieSpawner(-300, 750, 35, arcade.csscolor.GRAY)
+        self.zombie_spawn_locations.append(spawner)
+
+        spawner = ZombieSpawner(400, 100, 35, arcade.csscolor.GRAY)
+        self.zombie_spawn_locations.append(spawner)
+
+        spawner = ZombieSpawner(320, -250, 35, arcade.csscolor.GRAY)
+        self.zombie_spawn_locations.append(spawner)
+
+        spawner = ZombieSpawner(690, 710, 35, arcade.csscolor.GRAY)
+        self.zombie_spawn_locations.append(spawner)
 
         for i in range(2):
             for j in range(24):
@@ -261,6 +293,9 @@ class MyGame(arcade.Window):
     def on_draw(self):
         arcade.start_render()
         self.camera_for_sprites.use()
+
+        for spawner in self.zombie_spawn_locations:
+            spawner.draw()
 
         self.player_list.draw()
         for zombie in self.zombie_list:
@@ -336,6 +371,15 @@ class MyGame(arcade.Window):
             arcade.draw_text(f"Current: {self.max_bullets_in_gun_stock} max",
                              200, 170, arcade.color.WHITE, 22)
 
+        if self.you_died:  # if you die
+            arcade.draw_lrtb_rectangle_filled(0, screen_width, screen_height, 0, arcade.csscolor.BLACK)
+            arcade.draw_text("You Died!",
+                             screen_width / 2 - 160, screen_height / 2, arcade.color.RED, 60)
+            arcade.draw_text(f"You made it to round {round_number}.",
+                             screen_width / 2 - 270, screen_height / 2 - 80, arcade.color.RED, 40)
+            arcade.draw_text("Press space to close.",
+                             screen_width / 2 - 200, screen_height / 2 - 150, arcade.color.RED, 35)
+
 
     def on_update(self, delta_time):
 
@@ -372,8 +416,8 @@ class MyGame(arcade.Window):
             if arcade.check_for_collision(self.player_sprite.player_sprite, sprite):
                 zombie.damage_delay += delta_time
                 if self.health_loss_delay >= 0.25:
-                    self.player_sprite.health -= 10
-                    # player loses 10 health 4 times per sec when touching zombie
+                    self.player_sprite.health -= 15
+                    # player loses 15 health 4 times per sec when touching zombie
                     self.health_loss_delay = 0
             else:
                 zombie.damage_delay += delta_time
@@ -381,8 +425,8 @@ class MyGame(arcade.Window):
         self.health_loss_delay += delta_time
         self.health_regen_delay += delta_time
 
-        if self.player_sprite.health < self.player_sprite.max_health and self.health_regen_delay >= 0.5:
-            self.player_sprite.health += 2  # player gains 2 health twice per second always (for now)
+        if self.player_sprite.health < self.player_sprite.max_health and self.health_regen_delay >= 0.3:
+            self.player_sprite.health += 1  # player gains 1 health every 0.3 seconds
             self.health_regen_delay = 0
 
         for bullet in self.bullet_list:
@@ -461,62 +505,56 @@ class MyGame(arcade.Window):
             self.round_change_delay += delta_time
             if self.round_change_delay >= 5:
                 round_number += 1
-                self.total_zombies = initial_zombie_count + 2 * round_number
                 self.color_change_delay = 0
                 self.round_change_delay = 0
 
                 # Determine zombie speed based on round number
-                for i in range(self.total_zombies):
+                for i in range(initial_zombie_count + 2 * round_number):
                     if round_number >= 18:
                         speed = random.choice([1, 2, 3, 4, 4.5])
                     elif round_number >= 14:
                         speed = random.choice([2.5, 3, 3.5])
                     elif round_number >= 10:
-                        speed = 2.5
+                        speed = random.choice([2, 2.3, 2.5, 2.8])
                     elif round_number >= 6:
                         speed = random.choice([1.5, 2.5])
                     elif round_number >= 3:
                         speed = random.choice([0.5, 1.5])
                     else:
                         speed = 0.5
-                    # Create zombie object
+                    # Create zombie object at a random location
                     self.zombie_spawn_location = random.randrange(1, 7)
+                    # For each zombie, spawn at a random spot
                     if self.zombie_spawn_location == 1:
-                        zombie = Zombie(random.randrange(-350, -200), random.randrange(-350, -200),
+                        zombie = Zombie(-200, -200,
                                         initial_zombie_health + 8 * round_number, speed)
                         self.zombie_list.append(zombie)
                         self.zombies_list.append(zombie.zombie_sprite)
-                        self.on_screen_zombies += 1
                     elif self.zombie_spawn_location == 2:
-                        zombie = Zombie(random.randrange(-200, -50), random.randrange(-200, -50),
+                        zombie = Zombie(-350, 400,
                                         initial_zombie_health + 8 * round_number, speed)
                         self.zombie_list.append(zombie)
                         self.zombies_list.append(zombie.zombie_sprite)
-                        self.on_screen_zombies += 1
                     elif self.zombie_spawn_location == 3:
-                        zombie = Zombie(random.randrange(-200, -50), random.randrange(100, 250),
+                        zombie = Zombie(-300, 750,
                                         initial_zombie_health + 8 * round_number, speed)
                         self.zombie_list.append(zombie)
                         self.zombies_list.append(zombie.zombie_sprite)
-                        self.on_screen_zombies += 1
                     elif self.zombie_spawn_location == 4:
-                        zombie = Zombie(random.randrange(250, 500), random.randrange(0, 150),
+                        zombie = Zombie(400, 100,
                                         initial_zombie_health + 8 * round_number, speed)
                         self.zombie_list.append(zombie)
                         self.zombies_list.append(zombie.zombie_sprite)
-                        self.on_screen_zombies += 1
                     elif self.zombie_spawn_location == 5:
-                        zombie = Zombie(random.randrange(300, 450), random.randrange(100, 250),
+                        zombie = Zombie(320, -250,
                                         initial_zombie_health + 8 * round_number, speed)
                         self.zombie_list.append(zombie)
                         self.zombies_list.append(zombie.zombie_sprite)
-                        self.on_screen_zombies += 1
                     elif self.zombie_spawn_location == 6:
-                        zombie = Zombie(random.randrange(400, 500), random.randrange(10, 260),
+                        zombie = Zombie(690, 710,
                                         initial_zombie_health + 8 * round_number, speed)
                         self.zombie_list.append(zombie)
                         self.zombies_list.append(zombie.zombie_sprite)
-                        self.on_screen_zombies += 1
 
         if self.is_reloading:  # if you're reloading
             self.reload_timer += delta_time  # start reload delay
@@ -556,6 +594,9 @@ class MyGame(arcade.Window):
             self.bullets_in_gun_mag -= 1  # lose a bullet when user shoots
             self.mouse_pressed = False
 
+        if self.player_sprite.health < 1:
+            self.you_died = True
+
 
     def on_key_press(self, key, modifiers):
         if key == arcade.key.W:
@@ -592,7 +633,7 @@ class MyGame(arcade.Window):
             elif self.is_touching_stock_station and self.player_sprite.points >= self.buy_stock_cost:
             # If you're touching stock station, and you have enough points, then
                 self.buy_stock_max()
-        elif key == arcade.key.SPACE:
+        elif key == arcade.key.SPACE and self.you_died:
             arcade.close_window()
         elif key == arcade.key.R:
             if self.bullets_in_gun_mag < self.gun_mag_max:
@@ -630,13 +671,13 @@ class MyGame(arcade.Window):
 
     def buy_max_health(self):
         self.player_sprite.points -= self.buy_max_health_cost
-        self.buy_max_health_cost += round(self.buy_max_health_cost * 0.25)
+        self.buy_max_health_cost += round(self.buy_max_health_cost * 0.2)
         self.player_sprite.max_health += 5
 
 
     def buy_speed(self):
         self.player_sprite.points -= self.buy_speed_cost
-        self.buy_speed_cost += round(self.buy_speed_cost * 0.35)
+        self.buy_speed_cost += round(self.buy_speed_cost * 0.31)
         global movement_speed
         movement_speed += 0.2
 
@@ -657,18 +698,18 @@ class MyGame(arcade.Window):
 
     def buy_mag_max(self):
         self.player_sprite.points -= self.buy_mag_cost
-        self.buy_mag_cost += round(self.buy_mag_cost * 0.25)
-        self.gun_mag_max += 1
+        self.buy_mag_cost += round(self.buy_mag_cost * 0.22)
+        self.gun_mag_max += 2  # mag max goes up by 2
 
 
     def buy_stock_max(self):
         self.player_sprite.points -= self.buy_stock_cost
         self.buy_stock_cost += round(self.buy_stock_cost * 0.18)
-        self.max_bullets_in_gun_stock += 4
+        self.max_bullets_in_gun_stock += 4  # stock max goes up by 4
 
 
     def on_mouse_press(self, x, y, button, modifiers):
-        if self.bullets_in_gun_mag > 0 and button == arcade.MOUSE_BUTTON_LEFT:
+        if self.bullets_in_gun_mag > 0 and button == arcade.MOUSE_BUTTON_LEFT and not self.is_reloading:
             self.mouse_held = True
             self.mouse_pressed = True
             self.mouse_x = x
