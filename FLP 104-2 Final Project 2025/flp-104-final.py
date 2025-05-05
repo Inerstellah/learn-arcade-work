@@ -6,6 +6,7 @@ screen_height = 640
 camera_speed = 0.85
 movement_speed = 3.5
 icon_scaling = 1 / 16
+icon_proximity = 100
 
 class Player:
     def __init__(self):
@@ -31,9 +32,20 @@ class Player:
             self.player_sprite.texture = self.idle_texture  # Default to idle texture
 
 
+class Icon(arcade.Sprite):
+    def __init__(self, x, y, image, scale, text):
+        super().__init__(image, scale)
+        self.center_x = x
+        self.center_y = y
+        self.image = image
+        self.scale = scale
+        self.text = text
+
+
 class MyGame(arcade.Window):
     def __init__(self):
-        super().__init__(screen_width, screen_height, "FLP 104-2 Final Project Spring 2025")
+        super().__init__(screen_width, screen_height,
+                         "FLP 104-2 Final Project Spring 2025 - Surveillance in Education")
 
         self.player_list = arcade.SpriteList()
         self.icon_list = arcade.SpriteList()
@@ -43,6 +55,8 @@ class MyGame(arcade.Window):
 
         self.camera_for_sprites = arcade.Camera(screen_width, screen_height)
         self.camera_for_gui = arcade.Camera(screen_width, screen_height)
+
+        self.text_to_display = ""
 
 
     def setup(self):
@@ -59,9 +73,23 @@ class MyGame(arcade.Window):
             self.player_sprite.player_sprite, self.icon_list)
 
         # Create icon objects
-        icon = arcade.Sprite("info_icon.png", icon_scaling)
-        icon.center_x = 50
-        icon_center_y = 50
+        icon = Icon(150, 100, "info_icon.png", icon_scaling,
+                    "Did you know that surveillance tech has been sold to\nschools for decades? "
+                    "The goal is to increase safety.\nApps such as Gaggle, Bark, and Securly have "
+                    "not done\nwhat they were intended to do, and actually violated\nbasic student privacy.")
+        self.icon_list.append(icon)
+
+        icon = Icon(375, 100, "info_icon.png", icon_scaling,
+                    "The best learning happens when students are autonomous,\nwhich does not happen "
+                    "when they are under constant high\nsurveillance. Studies show that surveillance "
+                    "pressures\nstudents to act differently than they normally would, in hopes\nof appeasing "
+                    "whoever, or whatever, is watching them.")
+        self.icon_list.append(icon)
+
+        icon = Icon(600, 100, "info_icon.png", icon_scaling,
+                    "To learn, students have to make mistakes. Because there\nis fear that any "
+                    "mistakes could be used against them,\nstudents are scared to fully participate, "
+                    "if at all, which\ndisrupts the learning process.")
         self.icon_list.append(icon)
 
 
@@ -74,14 +102,37 @@ class MyGame(arcade.Window):
 
         self.camera_for_gui.use()
 
+        if self.text_to_display:
+            lines = self.text_to_display.split('\n')
+            start_y = 150  # Start higher on the screen so text isn't at the bottom
+            for i, line in enumerate(lines):
+                arcade.draw_text(line, 20, start_y - i * 25, arcade.color.WHITE, 16)
 
     def on_update(self, delta_time):
-        self.physics_engine.update()
+        self.player_sprite.player_sprite.center_x += self.player_sprite.player_sprite.change_x
+        self.player_sprite.player_sprite.center_y += self.player_sprite.player_sprite.change_y
+
+        # Check for collision
+        collided = arcade.check_for_collision_with_list(self.player_sprite.player_sprite, self.icon_list)
+        if collided:
+            # Undo movement
+            self.player_sprite.player_sprite.center_x -= self.player_sprite.player_sprite.change_x
+            self.player_sprite.player_sprite.center_y -= self.player_sprite.player_sprite.change_y
+
         self.player_sprite.update(delta_time)
 
         lower_left_corner = (self.player_sprite.player_sprite.center_x - self.width / 2,
                              self.player_sprite.player_sprite.center_y - self.height / 2)
         self.camera_for_sprites.move_to(lower_left_corner, camera_speed)
+
+        for icon in self.icon_list:
+            if isinstance(icon, Icon):
+                distance = arcade.get_distance_between_sprites(self.player_sprite.player_sprite, icon)
+                if distance <= icon_proximity:
+                    self.text_to_display = icon.text
+                    break
+                else:
+                    self.text_to_display = ""
 
 
     def on_key_press(self, key, modifiers):
