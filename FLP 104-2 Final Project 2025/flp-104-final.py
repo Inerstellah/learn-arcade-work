@@ -1,7 +1,8 @@
 import arcade
 from arcade import AnimationKeyframe
+import webbrowser
 
-screen_width = 768
+screen_width = 1024
 screen_height = 640
 camera_speed = 0.85
 movement_speed = 3.5
@@ -33,13 +34,14 @@ class Player:
 
 
 class Icon(arcade.Sprite):
-    def __init__(self, x, y, image, scale, text):
+    def __init__(self, x, y, image, scale, text, kind):
         super().__init__(image, scale)
         self.center_x = x
         self.center_y = y
         self.image = image
         self.scale = scale
         self.text = text
+        self.kind = kind
 
 
 class MyGame(arcade.Window):
@@ -58,9 +60,11 @@ class MyGame(arcade.Window):
 
         self.text_to_display = ""
 
+        self.is_touching_links_icon = False
+
 
     def setup(self):
-        arcade.set_background_color(arcade.color.FOREST_GREEN)
+        arcade.set_background_color(arcade.color.LIME_GREEN)
 
         self.player_list = arcade.SpriteList()
 
@@ -74,22 +78,114 @@ class MyGame(arcade.Window):
 
         # Create icon objects
         icon = Icon(150, 100, "info_icon.png", icon_scaling,
-                    "Did you know that surveillance tech has been sold to\nschools for decades? "
-                    "The goal is to increase safety.\nApps such as Gaggle, Bark, and Securly have "
-                    "not done\nwhat they were intended to do, and actually violated\nbasic student privacy.")
+                    "Did you know that surveillance tech has been sold to\n"
+                    "schools for decades? The goal is to increase safety.\n"
+                    "Apps such as Gaggle, Bark, and Securly have not done\n"
+                    "what they were intended to do, and actually violated\n"
+                    "basic student privacy.", 1)
         self.icon_list.append(icon)
 
         icon = Icon(375, 100, "info_icon.png", icon_scaling,
-                    "The best learning happens when students are autonomous,\nwhich does not happen "
-                    "when they are under constant high\nsurveillance. Studies show that surveillance "
-                    "pressures\nstudents to act differently than they normally would, in hopes\nof appeasing "
-                    "whoever, or whatever, is watching them.")
+                    "The best learning happens when students are autonomous,\n"
+                    "which does not happen when they are under constant high\n"
+                    "surveillance. Studies show that surveillance pressures\n"
+                    "students to act differently than they normally would, in hopes\n"
+                    "of appeasing whoever, or whatever, is watching them.", 1)
         self.icon_list.append(icon)
 
         icon = Icon(600, 100, "info_icon.png", icon_scaling,
-                    "To learn, students have to make mistakes. Because there\nis fear that any "
-                    "mistakes could be used against them,\nstudents are scared to fully participate, "
-                    "if at all, which\ndisrupts the learning process.")
+                    "To learn, students have to make mistakes. However,\n"
+                    "because there is fear that any mistakes could be used\n"
+                    "against them, students are scared to fully participate, if\n"
+                    "at all, which disrupts the learning process.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(600, -200, "info_icon.png", icon_scaling,
+                    "Surveillance in general has been an issue since at least the\n"
+                    "1850's, where the Pinkerton National Detective Agency would spy\n"
+                    "on any organized labor. Later, in 1870, the U.S. Justice Department\n"
+                    "was established and they would often contract with these private\n"
+                    "detective firms.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(375, -200, "info_icon.png", icon_scaling,
+                    "Critics point out that the main goal of personalized learning\n"
+                    "and EdTech, a 'global research partnership' is to rid of public\n"
+                    "education and to replace it with a financialized authoritarian\n"
+                    "system. In this system, education would be run privately, but a\n"
+                    "state subsidized part of Big Data. This education model has no\n"
+                    "human interaction, which is a huge part in children learning\n"
+                    "effectively, and instead has children sitting in front of screens.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(150, -200, "info_icon.png", icon_scaling,
+                    "In order for this 'personalized learning' to function\n"
+                    "properly, data from all students would have to be collected\n"
+                    "and used. At scale, this seems like a huge crime - collecting\n"
+                    "data from millions of kids. It can be misleading because it\n"
+                    "promises that everyone will reach a 'mastery level' and has\n"
+                    "the illusion of freedom. Of course, personalized learning is\n"
+                    "all about control and conditioning.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(150, -500, "info_icon.png", icon_scaling,
+                    "While it makes sense to collect some children's educational\n"
+                    "data, so as to see how they are doing, teachers and even schools\n"
+                    "admit that they don't know what else happens to the data that they\n"
+                    "collect about their students.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(375, -500, "info_icon.png", icon_scaling,
+                    "A common app teachers use is GoGuardian, a parental app that\n"
+                    "allows the controller to see the screens of every student. It\n"
+                    "greatly oversimplifies student behavior though, leaving only\n"
+                    "statistics in numbers of each student without context.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(600, -500, "info_icon.png", icon_scaling,
+                    "For example, I could say that if you've only been in this game\n"
+                    "for a minute, you probably didn't read everything. Or, if you have\n"
+                    "been in this game for 15 minutes then you probably have been side\n"
+                    "tracked. Of course, I can't be for certain what you have really\n"
+                    "been doing just by looking at how long you've been in the game for.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(600, -800, "info_icon.png", icon_scaling,
+                    "Dr. Hillman, a researched at the London School for Economics, said\n"
+                    "'stronger regulation is essential to protect students and ensure that\n"
+                    "technology supports their learning without compromising their privacy\n"
+                    "or wellbeing. We must prioritise children's interests on safeguard their\n"
+                    "future in a safe and ethical way, in an increasingly digitised school\n"
+                    "environment.'", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(1145, -800, "info_icon.png", icon_scaling,
+                    "I personally think that surveillance in education is a less than\n"
+                    "ideal thing. I believe that collecting the data of children is\n"
+                    "morally wrong, especially when they don't know what's happening.\n"
+                    "Some may say 'oh, so we'll just ask if it's okay' but I don't\n"
+                    "think that's a good idea either because most children wouldn't\n"
+                    "fully understand what data collection really is.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(1370, -800, "info_icon.png", icon_scaling,
+                    "Artificial intelligence may also improperly interpret the\n"
+                    "data that it collects. We have seen examples of what AI\n"
+                    "thinks about when collecting data, like how likely that\n"
+                    "person is to skip school. It has also incorrectly identified\n"
+                    "people as criminals, and they get sent to jail for something\n"
+                    "that they never did. This being said, I don't think AI should\n"
+                    "be used in education to collect children's data - teachers\n"
+                    "should just be more attentive to their students.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(1370, -1025, "info_icon.png", icon_scaling,
+                    "Sources:\n"
+                    "www.teenvogue.com - Press 1 to open\n"
+                    "www.newswise.com - Press 2 to open\n"
+                    "www.dissidentvoice.org - Press 3 to open\n"
+                    "www.hackeducation.com - Press 4 to open\n"
+                    "Chapter of 'Four Surveillance Technologies Creating... - Press 5 to open", 2)
         self.icon_list.append(icon)
 
 
@@ -100,19 +196,37 @@ class MyGame(arcade.Window):
         self.player_list.draw()
         self.icon_list.draw()
 
+        #  Horizontal
+        arcade.draw_line(200, 100, 325, 100, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(425, 100, 550, 100, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(200, -200, 325, -200, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(425, -200, 550, -200, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(200, -500, 325, -500, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(425, -500, 550, -500, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(650, -800, 775, -800, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(965, -800, 1090, -800, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(1195, -800, 1315, -800, arcade.csscolor.SKY_BLUE, 4)
+
+        #  Vertical
+        arcade.draw_line(600, 50, 600, -150, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(150, -250, 150, -450, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(600, -550, 600, -750, arcade.csscolor.SKY_BLUE, 4)
+        arcade.draw_line(1370, -850, 1370, -975, arcade.csscolor.SKY_BLUE, 4)
+
+        arcade.draw_text("My opinion?", 800, -807, arcade.csscolor.BLACK, 20)
+
         self.camera_for_gui.use()
 
-        if self.text_to_display:
+        if self.text_to_display:  # ChatGPT wrote this part
             lines = self.text_to_display.split('\n')
-            start_y = 150  # Start higher on the screen so text isn't at the bottom
+            start_y = 175  # Start higher on the screen so text isn't at the bottom
             for i, line in enumerate(lines):
-                arcade.draw_text(line, 20, start_y - i * 25, arcade.color.WHITE, 16)
+                arcade.draw_text(line, 20, start_y - i * 25, arcade.color.BLACK, 16)
+
 
     def on_update(self, delta_time):
-        self.player_sprite.player_sprite.center_x += self.player_sprite.player_sprite.change_x
-        self.player_sprite.player_sprite.center_y += self.player_sprite.player_sprite.change_y
+        self.physics_engine.update()
 
-        # Check for collision
         collided = arcade.check_for_collision_with_list(self.player_sprite.player_sprite, self.icon_list)
         if collided:
             # Undo movement
@@ -130,6 +244,10 @@ class MyGame(arcade.Window):
                 distance = arcade.get_distance_between_sprites(self.player_sprite.player_sprite, icon)
                 if distance <= icon_proximity:
                     self.text_to_display = icon.text
+                    if icon.kind == 2:
+                        self.is_touching_links_icon = True
+                    else:
+                        self.is_touching_links_icon = False
                     break
                 else:
                     self.text_to_display = ""
@@ -148,6 +266,17 @@ class MyGame(arcade.Window):
         elif key == arcade.key.D:
             self.player_sprite.player_sprite.change_x = movement_speed
             self.player_sprite.is_walking = True
+        elif key == arcade.key.KEY_1 and self.is_touching_links_icon:
+            webbrowser.open("www.teenvogue.com/story/surveillance-education-spying-technology-schools")
+        elif key == arcade.key.KEY_2 and self.is_touching_links_icon:
+            webbrowser.open("www.newswise.com/articles/classrooms-under-surveillance")
+        elif key == arcade.key.KEY_3 and self.is_touching_links_icon:
+            webbrowser.open("dissidentvoice.org/2016/10/education-technology-"
+                            "surveillance-and-americas-authoritarian-democracy")
+        elif key == arcade.key.KEY_4 and self.is_touching_links_icon:
+            webbrowser.open("hackeducation.com/2019/08/28/surveillance-ed-tech")
+        elif key == arcade.key.KEY_5 and self.is_touching_links_icon:
+            webbrowser.open("https://doi.org/10.1007/978-3-031-09687-7_19")
         elif key == arcade.key.SPACE:
             arcade.close_window()
 
