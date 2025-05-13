@@ -8,6 +8,7 @@ movement_speed = 3
 player_scaling = 0.65
 zombie_scaling = 0.65
 wall_scaling = 0.5
+crosshair_scaling = 0.1
 initial_zombie_count = 3
 initial_zombie_health = 20
 round_number = 1
@@ -107,6 +108,13 @@ class ZombieSpawner:
         arcade.draw_circle_filled(self.x, self.y, self.radius, self.color)
 
 
+class Crosshair(arcade.Sprite):
+    def __init__(self, x, y):
+        super().__init__("crosshair.png", crosshair_scaling)
+        self.center_x = x
+        self.center_y = y
+
+
 class MyGame(arcade.Window):
     def __init__(self):
         super().__init__(screen_width, screen_height, "COD: Zombies ripoff")
@@ -118,8 +126,10 @@ class MyGame(arcade.Window):
         self.bullet_list = arcade.SpriteList()
         self.upgrade_stations = arcade.SpriteList()
         self.zombie_spawn_locations = []
+        self.crosshair_list = arcade.SpriteList()
 
         self.player_sprite = None
+        self.crosshair = None
         self.physics_engine_zombies = None
         self.physics_engine_upgrade_stations = None
         self.physics_engine_walls = None
@@ -173,6 +183,8 @@ class MyGame(arcade.Window):
         self.is_touching_stock_station = False
 
         self.you_died = False
+
+        self._mouse_visible = False
 
 
     def setup(self):
@@ -289,6 +301,9 @@ class MyGame(arcade.Window):
         self.physics_engine_walls = arcade.PhysicsEngineSimple(
             self.player_sprite.player_sprite, self.wall_list)
 
+        self.crosshair = Crosshair(self.mouse_x, self.mouse_y)
+        self.crosshair_list.append(self.crosshair)
+
 
     def on_draw(self):
         arcade.start_render()
@@ -305,6 +320,7 @@ class MyGame(arcade.Window):
 
         self.bullet_list.draw()
         self.wall_list.draw()
+        self.crosshair_list.draw()
 
         self.camera_for_gui.use()
 
@@ -596,6 +612,11 @@ class MyGame(arcade.Window):
 
         if self.player_sprite.health < 1:
             self.you_died = True
+
+        world_x = self.mouse_x + self.camera_pos[0]
+        world_y = self.mouse_y + self.camera_pos[1]
+        self.crosshair.center_x = world_x
+        self.crosshair.center_y = world_y
 
 
     def on_key_press(self, key, modifiers):
