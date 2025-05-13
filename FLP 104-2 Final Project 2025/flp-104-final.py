@@ -2,7 +2,7 @@ import arcade
 from arcade import AnimationKeyframe
 import webbrowser
 
-screen_width = 768
+screen_width = 1024
 screen_height = 640
 camera_speed = 0.85
 movement_speed = 3.5
@@ -64,7 +64,7 @@ class MyGame(arcade.Window):
 
 
     def setup(self):
-        arcade.set_background_color(arcade.color.FOREST_GREEN)
+        arcade.set_background_color(arcade.color.NAVY_PURPLE)
 
         self.player_list = arcade.SpriteList()
 
@@ -156,10 +156,30 @@ class MyGame(arcade.Window):
                     "technology supports their learning without compromising their privacy\n"
                     "or wellbeing. We must prioritise children's interests on safeguard their\n"
                     "future in a safe and ethical way, in an increasingly digitised school\n"
-                    "environment.", 1)
+                    "environment.'", 1)
         self.icon_list.append(icon)
 
-        icon = Icon(375, -1000, "info_icon.png", icon_scaling,
+        icon = Icon(1145, -800, "info_icon.png", icon_scaling,
+                    "I personally think that surveillance in education is a less than\n"
+                    "ideal thing. I believe that collecting the data of children is\n"
+                    "morally wrong, especially when they don't know what's happening.\n"
+                    "Some may say 'oh, so we'll just ask if it's okay' but I don't\n"
+                    "think that's a good idea either because most children wouldn't\n"
+                    "fully understand what data collection really is.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(1370, -800, "info_icon.png", icon_scaling,
+                    "Artificial intelligence may also improperly interpret the\n"
+                    "data that it collects. We have seen examples of what AI\n"
+                    "thinks about when collecting data, like how likely that\n"
+                    "person is to skip school. It has also incorrectly identified\n"
+                    "people as criminals, and they get sent to jail for something\n"
+                    "that they never did. This being said, I don't think AI should\n"
+                    "be used in education to collect children's data - teachers\n"
+                    "should just be more attentive to their students.", 1)
+        self.icon_list.append(icon)
+
+        icon = Icon(1370, -1025, "info_icon.png", icon_scaling,
                     "Sources:\n"
                     "www.teenvogue.com - Press 1 to open\n"
                     "www.newswise.com - Press 2 to open\n"
@@ -171,10 +191,40 @@ class MyGame(arcade.Window):
 
     def on_draw(self):
         arcade.start_render()
+
+        arcade.start_render()
+
+        arcade.draw_text("W - up", 50, 570, arcade.color.WHITE, 20)
+        arcade.draw_text("A - left", 56, 540, arcade.color.WHITE, 20)
+        arcade.draw_text("S - down", 55, 510, arcade.color.WHITE, 20)
+        arcade.draw_text("D - right", 54, 480, arcade.color.WHITE, 20)
+
+        arcade.draw_text("Get close to an icon to learn about surveillance in education!",
+                         23, 610, arcade.color.WHITE,20)
+
         self.camera_for_sprites.use()
 
         self.player_list.draw()
         self.icon_list.draw()
+
+        #  Horizontal
+        arcade.draw_line(200, 100, 325, 100, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(425, 100, 550, 100, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(200, -200, 325, -200, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(425, -200, 550, -200, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(200, -500, 325, -500, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(425, -500, 550, -500, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(650, -800, 775, -800, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(965, -800, 1090, -800, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(1195, -800, 1315, -800, arcade.csscolor.DARK_RED, 4)
+
+        #  Vertical
+        arcade.draw_line(600, 50, 600, -150, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(150, -250, 150, -450, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(600, -550, 600, -750, arcade.csscolor.DARK_RED, 4)
+        arcade.draw_line(1370, -850, 1370, -975, arcade.csscolor.DARK_RED, 4)
+
+        arcade.draw_text("My opinion?", 800, -807, arcade.csscolor.BLACK, 20)
 
         self.camera_for_gui.use()
 
@@ -187,6 +237,12 @@ class MyGame(arcade.Window):
 
     def on_update(self, delta_time):
         self.physics_engine.update()
+
+        collided = arcade.check_for_collision_with_list(self.player_sprite.player_sprite, self.icon_list)
+        if collided:
+            # Undo movement
+            self.player_sprite.player_sprite.center_x -= self.player_sprite.player_sprite.change_x
+            self.player_sprite.player_sprite.center_y -= self.player_sprite.player_sprite.change_y
 
         self.player_sprite.update(delta_time)
 
